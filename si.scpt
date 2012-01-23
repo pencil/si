@@ -139,8 +139,8 @@ on textualcmd(cmd)
 		set ViewMac to true
 		set ViewCPU to true
 		set ViewCurrentCPUSpeed to true
-		set ViewCap to false
-		set ViewCache to false
+		set ViewCPUCapabilities to false
+		set ViewCPUCache to false
 		set ViewFSB to false
 		set ViewRam to true
 		set ViewBars to true
@@ -164,8 +164,8 @@ on textualcmd(cmd)
 		set ViewCPU to (cmd contains "cpu")
 		if ViewCPU then
 			set ViewCurrentCPUSpeed to (cmd contains "speed")
-			set ViewCap to (cmd contains "cap")
-			set ViewCache to (cmd contains "cache")
+			set ViewCPUCapabilities to (cmd contains "cap")
+			set ViewCPUCache to (cmd contains "cache")
 			set ViewFSB to (cmd contains "fsb")
 		end if
 		set ViewRam to (cmd contains "ram")
@@ -396,6 +396,60 @@ on textualcmd(cmd)
 				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "MHz"
 			end if
 		end if
+		
+		if ViewCPUCapabilities is true then
+			set corecheck to do shell script "sysctl -n machdep.cpu.core_count"
+			set features to do shell script "sysctl -n machdep.cpu.features"
+			set extfeatures to do shell script "sysctl -n machdep.cpu.extfeatures"
+			set msg to msg & " ["
+			if features contains "SSE4" then
+				set msg to msg & "SSE4"
+			end if
+			if features contains "AVX" then
+				set msg to msg & "" & "/AVX"
+			end if
+			if features contains "PAE" then
+				set msg to msg & "" & "/PAE"
+			end if
+			if features contains "HT" then
+				set msg to msg & "" & "/HT"
+			end if
+			if extfeatures contains "VMX" then
+				set msg to msg & "" & "/VMX"
+			end if
+			if extfeatures contains "EM64T" then
+				set msg to msg & "" & "/EM64T"
+			end if
+			if corecheck is "1" then
+				set msg to msg & "/SingleCore"
+			end if
+			if corecheck is "2" then
+				set msg to msg & "/DualCore"
+			end if
+			if corecheck is "4" then
+				set msg to msg & "" & "/QuadCore"
+			end if
+			if corecheck is 6 then
+				set msg to msg & "" & "/HexaCore"
+			end if
+			if corecheck is 8 then
+				set msg to msg & "" & "/OctoCore"
+			end if
+			set msg to msg & "]"
+		end if
+		
+		--L2 Cache
+		if ViewCPUCache is true then
+			set coreicheck to do shell script "sysctl machdep.cpu.brand_string"
+			if coreicheck contains "Core(TM) i" then
+				set cpucache to do shell script "sysctl -n hw.l3cachesize"
+				set msg to msg & FBold & " L3: " & FBold & (round (cpucache / 1024 / 1024)) & "MiB"
+			else
+				set cpucache to do shell script "sysctl -n hw.l2cachesize"
+				set msg to msg & FBold & " L2: " & FBold & (round (cpucache / 1024 / 1024)) & "MiB"
+			end if
+		end if
+		set msg to msg & ItemDelimiter
 	end if
 	
 	return msg
