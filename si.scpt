@@ -6,8 +6,7 @@
 -- Copy this to ~/Library/Application Support/Textual IRC/Scripts/
 -- Run /si or /si help for more options.
 
--- | DEBUG COMMAND | --
---set cmd to "cpu"
+
 
 -- | SCRIPT START | --
 -- |Properties| --
@@ -19,6 +18,9 @@ property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
 property CurrentVersion : "0.0.2"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
+
+-- | DEBUG COMMAND | --
+--set cmd to ""
 
 on textualcmd(cmd)
 	
@@ -86,7 +88,7 @@ on textualcmd(cmd)
 	-- Defines the Bars' Colors
 	set UsedColor to CRed
 	set FreeColor to CGreen
-	set SeparatorColor to CLGrey
+	set SeparatorColor to COrange
 	
 	if (cmd contains "simple") or (Simple is true or Simple is "True") then
 		set UsedColor to ""
@@ -195,14 +197,7 @@ on textualcmd(cmd)
 		set msg to "/echo Possible Options:" & NewLine & ¬
 			"/echo To change an option type '/" & ScriptName & " <option name> toggle'. Example: /" & ScriptName & " simple toggle " & NewLine & ¬
 			"/echo • UseAllMountpoints - Defines if the script considers every mounted disk / net share as available disk space or not." & FBold & " - Current Status: " & FBold & CRed & UseAllMountpoints & NewLine & ¬
-			"/echo • Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine & ¬
-			"/echo • SBClock - Defines if the script attempts to get the real CPU clock speed for Overclocked Sandy Bridge Hackintoshes." & FBold & " - Current Status: " & FBold & CRed & SBClock & NewLine
-		set chars to count characters of ("Possible Options:")
-		set separator to ""
-		repeat chars times
-			set separator to separator & "_"
-		end repeat
-		set msg to "/echo " & separator & NewLine & msg
+			"/echo • Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine
 		return msg
 		
 	end if
@@ -316,12 +311,6 @@ on textualcmd(cmd)
 			"/echo There are also some special labels: 'about' shows some info about the script; " & NewLine & ¬
 			"/echo The 'simple' label makes the script output without any formatting (colors, bold, etc...); " & NewLine & ¬
 			"/echo The 'update' label updates the script and the 'version' label displays the current version."
-		set chars to count characters of ("Usage:" & " /" & ScriptName & " [labels] [simple]" & NewLine)
-		set separator to ""
-		repeat chars times
-			set separator to separator & "_"
-		end repeat
-		set msg to "/echo " & separator & NewLine & msg
 		return msg
 	end if
 	
@@ -330,12 +319,6 @@ on textualcmd(cmd)
 			"/echo " & FBold & ScriptName & " " & CurrentVersion & FBold & " - " & ScriptDescription & NewLine & ¬
 			"/echo Homepage: " & ScriptHomepage & NewLine & ¬
 			"/echo Coded by " & ScriptAuthor & " - " & ScriptAuthorHomepage & NewLine
-		set chars to count characters of (FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine)
-		set separator to ""
-		repeat chars times
-			set separator to separator & "_"
-		end repeat
-		set msg to "/echo " & separator & NewLine & msg
 		return msg
 	end if
 	
@@ -387,12 +370,13 @@ on textualcmd(cmd)
 		
 		
 		if ViewCurrentCPUSpeed is true then
-			set CPUFrequency to do shell script "sysctl -n hw.cpufrequency"
+			set CPUFrequency to CPU speed of (system info)
+			set CPUFrequency to CPUFrequency * 1000000
 			if CPUFrequency / 1000000 ≥ 990 then
 				set CPUFrequency to (CPUFrequency / 100000000) / 10
-				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "0 GHz"
+				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "GHz"
 			else
-				set temp to (cpufreq / 1000000)
+				set temp to (CPUFrequency / 1000000)
 				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "MHz"
 			end if
 		end if
@@ -451,6 +435,147 @@ on textualcmd(cmd)
 		end if
 		set msg to msg & ItemDelimiter
 	end if
+	
+	--Ram
+	if ViewRam is true then
+		set TotalMemory to do shell script "sysctl -n hw.memsize"
+		set TotalMemory to TotalMemory / 1024 / 1024 as integer
+		set FreeMemory to do shell script "top -l1 | grep 'PhysMem' | awk '{print $10}'"
+		if FreeMemory contains "G" then
+			set AppleScript's text item delimiters to "G"
+			set FreeMemory to text item 1 of FreeMemory
+			set FreeMemory to FreeMemory * 1024
+			set AppleScript's text item delimiters to ""
+		else
+			set AppleScript's text item delimiters to "M"
+			set FreeMemory to text item 1 of FreeMemory
+			set AppleScript's text item delimiters to ""
+		end if
+		set UsedMemory to TotalMemory - FreeMemory
+		set UsedMemoryBar to (UsedMemory / TotalMemory) * 100 as integer
+		set UsedMemoryBar to round (UsedMemoryBar / 10) rounding to nearest
+		if TotalMemory ≥ 1024 then
+			set TotalMemory to (TotalMemory round) / 1024
+			set TotalMemoryUnit to "GiB"
+		else
+			set TotalMemoryUnit to "MiB"
+		end if
+		if UsedMemory ≥ 1024 then
+			set UsedMemory to UsedMemory / 1024
+			set UsedMemory to (round (UsedMemory * 100)) / 100
+			set UsedMemoryUnit to "GiB"
+		else
+			set UsedMemory to (round (UsedMemory * 100)) / 100
+			set UsedMemoryUnit to "MiB"
+		end if
+		
+		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
+		if ViewBars is true then
+			set FreeMemoryBar to 10 - UsedMemoryBar
+			set OutputBar to "[" & UsedColor
+			repeat UsedMemoryBar times
+				set OutputBar to OutputBar & "❙"
+			end repeat
+			set OutputBar to OutputBar & SeparatorColor & "|" & FreeColor
+			repeat FreeMemoryBar times
+				set OutputBar to OutputBar & "❙"
+			end repeat
+			set OutputBar to OutputBar & CWhite & "]"
+			set msg to msg & " " & OutputBar
+		end if
+		set msg to msg & ItemDelimiter
+	end if
+	
+	--HDD
+	if ViewDisk is true then
+		set TotalHDDFree to 0
+		set TotalHDDSpace to 0
+		if UseAllMountpoints is "True" then
+			tell application "Finder"
+				set DiskList to list disks
+				-- Do not use "/" if on Snow Leopard
+				if system version of (system info) contains "10.6" then
+					set DiskList to items -2 thru 1 of DiskList
+				end if
+				-- Do not use "home" nor "net" on Lion
+				if system version of (system info) contains "10.7" then
+					set DisksNotToUse to {"net", "home"}
+					set NewDiskList to {}
+					repeat with i from 1 to count DiskList
+						if {DiskList's item i} is not in DisksNotToUse then set NewDiskList's end to DiskList's item i
+					end repeat
+					set DiskList to NewDiskList
+				end if
+				-- If there is more than one disk
+				set NumberOfDisks to count items of DiskList
+				if NumberOfDisks > 1 then
+					repeat with i in DiskList
+						set diskName to (i as string)
+						try
+							-- Add all the free spaces and total capacity of the disks.
+							set FreeHDDSpace to round (the (free space of disk diskName) / 1024 / 1024)
+							set AllHDDSpace to round (the (capacity of disk diskName) / 1024 / 1024)
+							set TotalHDDFree to TotalHDDFree + FreeHDDSpace
+							set TotalHDDSpace to TotalHDDSpace + AllHDDSpace
+						end try
+					end repeat
+					-- Define the used space of all disks
+					set TotalHDDUsed to TotalHDDSpace - TotalHDDFree
+				else
+					-- If Just one disk.
+					set TotalHDDUsed to do shell script "df -k | tail +2 | awk '{print $3}' | tail -r | tail -1"
+					set TotalHDDUsed to (TotalHDDUsed / 1024) as integer
+					set TotalHDDSpace to do shell script "df -k | tail +2 | awk '{print $2}' | tail -r | tail -1"
+					set TotalHDDSpace to (TotalHDDSpace / 1024) as integer
+					set TotalHDDFree to TotalHDDSpace - TotalHDDUsed
+				end if
+			end tell
+			-- If UseAllMountpoints is False then (this is commented on purpose. Don't delete)
+		else
+			set TotalHDDUsed to do shell script "df -k | tail +2 | awk '{print $3}' | tail -r | tail -1"
+			set TotalHDDUsed to (TotalHDDUsed / 1024)
+			set TotalHDDSpace to do shell script "df -k | tail +2 | awk '{print $2}' | tail -r | tail -1"
+			set TotalHDDSpace to (TotalHDDSpace / 1024)
+		end if
+		-- Creates Percentage to use on Bars.
+		set UsedHDDPercentage to round ((TotalHDDUsed / TotalHDDSpace) * 100) rounding to nearest
+		set TotalHDDUsed to TotalHDDUsed / 1024
+		set TotalHDDUsed to (round TotalHDDUsed * 100) / 100
+		set TotalHDDSpace to TotalHDDSpace / 1024
+		set TotalHDDSpace to (round TotalHDDSpace * 100) / 100
+		if TotalHDDUsed is greater than 1024 then
+			set TotalHDDUsed to TotalHDDUsed / 1024
+			set TotalHDDUsed to (round TotalHDDUsed * 100) / 100
+			set UsedHDDUnit to "TiB"
+		else
+			set UsedHDDUnit to "GiB"
+		end if
+		if TotalHDDSpace is greater than 1024 then
+			set TotalHDDSpace to TotalHDDSpace / 1024
+			set TotalHDDSpace to (round TotalHDDSpace * 100) / 100
+			set TotalHDDUnit to "TiB"
+		else
+			set TotalHDDUnit to "GiB"
+		end if
+		set msg to msg & FBold & "HDD: " & FBold & TotalHDDUsed & UsedHDDUnit & "/" & TotalHDDSpace & TotalHDDUnit
+		if ViewBars is true then
+			set UsedHDDBar to round (UsedHDDPercentage / 10) rounding to nearest
+			set FreeHDDBar to 10 - UsedHDDBar
+			set OutputBar to "[" & UsedColor
+			repeat UsedHDDBar times
+				set OutputBar to OutputBar & "❙"
+			end repeat
+			set OutputBar to OutputBar & SeparatorColor & "|" & FreeColor
+			repeat FreeHDDBar times
+				set OutputBar to OutputBar & "❙"
+			end repeat
+			set OutputBar to OutputBar & CWhite & "]"
+			set msg to msg & " " & OutputBar
+		end if
+		set msg to msg & ItemDelimiter
+	end if
+	
+	
 	
 	return msg
 end textualcmd
