@@ -1,0 +1,15 @@
+si - A System Information Script for the Textual IRC Client.
+Coded by Marcos Alves (xeon3d@emupt.com)
+Ideas and some code from KSysInfo by KanadaKid
+
+
+2 Step Installation:
+
+1) Open up Finder.
+2) Copy si.scpt to your ~/Library/Application Support/Textual IRC/Scripts/ Folder.
+
+Important Notes:
+
+It can't do much yet.
+The script is tested only against Textual 2.1 and Lion 10.7.2.
+Fixes and Improvements are welcome, but be patient on me as I'm a git newbie.
