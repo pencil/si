@@ -1,4 +1,4 @@
--- si - A System Information Script for Textual
+ï»¿-- si - A System Information Script for Textual
 -- Coded by Xeon3D
 --  Very loosely based on KSysInfo for Linkinus by KanadaKid
 
@@ -123,24 +123,11 @@ on textualcmd(cmd)
 		end try
 	end try
 	
-	-- This regards if the script should get the current CPU Speed for Overclocked SandyBridge Hackintoshs
-	try
-		set SBClock to do shell script "defaults read xeon3d.si SBClock"
-	on error
-		try
-			do shell script ("defaults write xeon3d.si SBClock False")
-			set SBClock to "False"
-		on error
-			set msg to "/echo There was an error with the SBClock variable"
-			return msg
-		end try
-	end try
-	
 	-- This sets the item delimiter. To change on a terminal type: defaults write xeon3d.si ItemDelimiter <item> (1 char)
 	try
 		set ItemDelimiter to " " & (do shell script "defaults read xeon3d.si ItemDelimiter") & " "
 	on error
-		set ItemDelimiter to " ¥ "
+		set ItemDelimiter to " â€¢ "
 	end try
 	
 	
@@ -205,11 +192,11 @@ on textualcmd(cmd)
 	end if
 	
 	if cmd is "options" then
-		set msg to "/echo Possible Options:" & NewLine & Â
-			"/echo To change an option type '/" & ScriptName & " <option name> toggle'. Example: /" & ScriptName & " simple toggle " & NewLine & Â
-			"/echo ¥ UseAllMountpoints - Defines if the script considers every mounted disk / net share as available disk space or not." & FBold & " - Current Status: " & FBold & CRed & UseAllMountpoints & NewLine & Â
-			"/echo ¥ Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine & Â
-			"/echo ¥ SBClock - Defines if the script attempts to get the real CPU clock speed for Overclocked Sandy Bridge Hackintoshes." & FBold & " - Current Status: " & FBold & CRed & SBClock & NewLine
+		set msg to "/echo Possible Options:" & NewLine & Â¬
+			"/echo To change an option type '/" & ScriptName & " <option name> toggle'. Example: /" & ScriptName & " simple toggle " & NewLine & Â¬
+			"/echo â€¢ UseAllMountpoints - Defines if the script considers every mounted disk / net share as available disk space or not." & FBold & " - Current Status: " & FBold & CRed & UseAllMountpoints & NewLine & Â¬
+			"/echo â€¢ Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine & Â¬
+			"/echo â€¢ SBClock - Defines if the script attempts to get the real CPU clock speed for Overclocked Sandy Bridge Hackintoshes." & FBold & " - Current Status: " & FBold & CRed & SBClock & NewLine
 		set chars to count characters of ("Possible Options:")
 		set separator to ""
 		repeat chars times
@@ -247,26 +234,6 @@ on textualcmd(cmd)
 		else if Simple is "False" then
 			do shell script "defaults write xeon3d.si Simple True"
 			return "/echo The script " & FBold & "will remove" & FBold & " the formatting from the output."
-		end if
-	end if
-	
-	if cmd is "SBClock" then
-		if SBClock is "True" then
-			set msg to "/echo The script will " & FBold & "show" & FBold & " the real CPU clock speed for Sandy Bridge OC'ed Hackintoshes. To change this type '/" & ScriptName & " SBClock toggle'"
-			return msg
-		else if SBClock is "False" then
-			set msg to "/echo The script will " & FBold & "not show" & FBold & "  the real CPU clock speed for Sandy Bridge OC'ed Hackintoshes. To change this type '/" & ScriptName & " SBClock toggle'"
-			return msg
-		end if
-	end if
-	
-	if cmd is "SBClock toggle" then
-		if SBClock is "True" then
-			do shell script "defaults write xeon3d.si SBClock False"
-			return "/echo The script will now " & FBold & "not show" & FBold & " the real CPU clock speed for Sandy Bridge OC'ed Hackintoshes."
-		else if SBClock is "False" then
-			do shell script "defaults write xeon3d.si SBClock True"
-			return "/echo The script will now " & FBold & "show" & FBold & " the real CPU clock speed for Sandy Bridge OC'ed Hackintoshes."
 		end if
 	end if
 	
@@ -342,12 +309,12 @@ on textualcmd(cmd)
 	end if
 	
 	if cmd is "help" then
-		set msg to Â
-			"/echo " & FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine & Â
-			"/echo If run without arguments, it'll show a predefined set of system details that can be customized by typing '/" & ScriptName & " options'" & NewLine & Â
-			"/echo Possible labels:" & NewLine & "/echo mac, cpu, speed, cap, cache, fsb, temp, ram, bar, mem, hd, gpu, res, audio, power, osx, osxbuild, osxarch, kernel, kerneltag, uptime, client." & NewLine & Â
-			"/echo There are also some special labels: 'about' shows some info about the script; " & NewLine & Â
-			"/echo The 'simple' label makes the script output without any formatting (colors, bold, etc...); " & NewLine & Â
+		set msg to Â¬
+			"/echo " & FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine & Â¬
+			"/echo If run without arguments, it'll show a predefined set of system details that can be customized by typing '/" & ScriptName & " options'" & NewLine & Â¬
+			"/echo Possible labels:" & NewLine & "/echo mac, cpu, speed, cap, cache, fsb, temp, ram, bar, mem, hd, gpu, res, audio, power, osx, osxbuild, osxarch, kernel, kerneltag, uptime, client." & NewLine & Â¬
+			"/echo There are also some special labels: 'about' shows some info about the script; " & NewLine & Â¬
+			"/echo The 'simple' label makes the script output without any formatting (colors, bold, etc...); " & NewLine & Â¬
 			"/echo The 'update' label updates the script and the 'version' label displays the current version."
 		set chars to count characters of ("Usage:" & " /" & ScriptName & " [labels] [simple]" & NewLine)
 		set separator to ""
@@ -359,9 +326,9 @@ on textualcmd(cmd)
 	end if
 	
 	if cmd is "about" then
-		set msg to Â
-			"/echo " & FBold & ScriptName & " " & CurrentVersion & FBold & " - " & ScriptDescription & NewLine & Â
-			"/echo Homepage: " & ScriptHomepage & NewLine & Â
+		set msg to Â¬
+			"/echo " & FBold & ScriptName & " " & CurrentVersion & FBold & " - " & ScriptDescription & NewLine & Â¬
+			"/echo Homepage: " & ScriptHomepage & NewLine & Â¬
 			"/echo Coded by " & ScriptAuthor & " - " & ScriptAuthorHomepage & NewLine
 		set chars to count characters of (FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine)
 		set separator to ""
@@ -417,6 +384,18 @@ on textualcmd(cmd)
 		set CPUModel to my remtext(CPUModel, "  ")
 		set CPUModel to my cutforward(CPUModel, " @")
 		set msg to msg & FBold & "CPU: " & FBold & CPUModel
+		
+		
+		if ViewCurrentCPUSpeed is true then
+			set CPUFrequency to do shell script "sysctl -n hw.cpufrequency"
+			if CPUFrequency / 1000000 â‰¥ 990 then
+				set CPUFrequency to (CPUFrequency / 100000000) / 10
+				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "0 GHz"
+			else
+				set temp to (cpufreq / 1000000)
+				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "MHz"
+			end if
+		end if
 	end if
 	
 	return msg
