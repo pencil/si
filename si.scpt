@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.0.5"
+property CurrentVersion : "0.1.0"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -359,12 +359,12 @@ on textualcmd(cmd)
 	
 	if ViewCPU is true then
 		set CPUModel to do shell script "sysctl machdep.cpu.brand_string | awk '{ print $2,$3,$4,$5,$6,$7,$8,$9 }'"
-		set CPUModel to my remtext(CPUModel, "(R)")
-		set CPUModel to my remtext(CPUModel, "(TM)")
-		set CPUModel to my remtext(CPUModel, "Processor")
-		set CPUModel to my remtext(CPUModel, " CPU")
-		set CPUModel to my remtext(CPUModel, "GHz")
-		set CPUModel to my remtext(CPUModel, "  ")
+		set CPUModel to my removetext(CPUModel, "(R)")
+		set CPUModel to my removetext(CPUModel, "(TM)")
+		set CPUModel to my removetext(CPUModel, "Processor")
+		set CPUModel to my removetext(CPUModel, " CPU")
+		set CPUModel to my removetext(CPUModel, "GHz")
+		set CPUModel to my removetext(CPUModel, "  ")
 		set CPUModel to my cutforward(CPUModel, " @")
 		set msg to msg & FBold & "CPU: " & FBold & CPUModel
 		
@@ -540,19 +540,53 @@ on textualcmd(cmd)
 		set msg to msg & ItemDelimiter
 	end if
 	
+	--Display
+	if ViewDisplay is true then
+		set SPGraphicsInfo to the paragraphs of (do shell script "system_profiler SPDisplaysDataType | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}'") as list
+		set VideoCard to item 1 of SPGraphicsInfo
+		set VideoCardBus to item 2 of SPGraphicsInfo
+		set VideoMemory to trim(item 3 of SPGraphicsInfo)
+		set NrOfMonitors to ((count of items of SPGraphicsInfo) - 3)
+		if (count items of SPGraphicsInfo) ≥ 6 then
+			set VideoCard to "2x" & trim(item 1 of SPGraphicsInfo)
+			set VideoMemory to "2x" & trim(item 3 of SPGraphicsInfo)
+			set NrOfMonitors to ((count of items of SPGraphicsInfo) - 6)
+		end if
+		set msg to msg & FBold & "GPU: " & FBold & VideoCard & " "
+		--GFXBus
+		if ViewGFXBus is true then
+			set msg to msg & "[" & removetext(VideoCardBus, " ") & "] "
+		end if
+		--VRAM
+		set msg to msg & "[" & VideoMemory & "] "
+		--Resolutions
+		if ViewResolutions is true then
+			if NrOfMonitors is 1 then
+				set ResolutionMonitor1 to removetext(item 4 of SPGraphicsInfo, " ")
+				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1
+			else if NrOfMonitors is 2 then
+				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
+				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2
+			else if NrOfMonitors is 3 then
+				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor3 to cutforward(removetext(item 9 of SPGraphicsInfo, " "), "@")
+				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2 & " & " & ResolutionMonitor3
+			else if NrOfMonitors is 4 then
+				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor3 to cutforward(removetext(item 9 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor4 to cutforward(removetext(item 10 of SPGraphicsInfo, " "), "@")
+				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2 & " & " & ResolutionMonitor3 & " & " & ResolutionMonitor4
+			end if
+		end if
+	end if
+	set msg to msg & ItemDelimiter
 	
 	
 	return msg
 end textualcmd
-
-on remtext(orig, remove)
-	if orig contains remove then
-		set AppleScript's text item delimiters to remove
-		set orig to text item 1 of orig & text items 2 thru end of orig
-	else
-		set orig to orig
-	end if
-end remtext
 
 on cutforward(orig, ponto)
 	if orig contains ponto then
@@ -571,3 +605,23 @@ on cutbackward(orig, ponto)
 		set orig to orig
 	end if
 end cutbackward
+
+on trim(orig)
+	repeat until orig does not start with " "
+		set orig to text 2 thru -1 of orig
+	end repeat
+	
+	repeat until orig does not end with " "
+		set orig to text 1 thru -2 of orig
+	end repeat
+	return orig
+end trim
+
+on removetext(orig, texttoremove)
+	set AppleScript's text item delimiters to texttoremove
+	set theTextItems to text items of orig
+	set AppleScript's text item delimiters to ""
+	set orig to theTextItems as string
+	set AppleScript's text item delimiters to {""}
+	return orig
+end removetext
