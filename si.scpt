@@ -330,29 +330,29 @@ on textualcmd(cmd)
 		set MachineModel to do shell script "sysctl -n hw.model"
 		
 		if MachineModel is "VMware7,1" then
-			set MachineName to "Virtualized"
+			set machineName to "Virtualized"
 		else
 			try
-				set MachineName to do shell script "cat " & MachinesPlist & " | grep -A1 " & MachineModel
+				set machineName to do shell script "cat " & MachinesPlist & " | grep -A1 " & MachineModel
 			on error
-				set MachineName to ""
+				set machineName to ""
 			end try
-			if MachineName is not "" then
-				set MachineName to 2nd paragraph of MachineName
+			if machineName is not "" then
+				set machineName to 2nd paragraph of machineName
 				set AppleScript's text item delimiters to ">"
-				set MachineName to text item 2 of MachineName
+				set machineName to text item 2 of machineName
 				set AppleScript's text item delimiters to "<"
-				set MachineName to text item 1 of MachineName
-				if MachineName contains "-inch" then
+				set machineName to text item 1 of machineName
+				if machineName contains "-inch" then
 					set AppleScript's text item delimiters to "-inch"
-					set MachineName to text item 1 of MachineName & "\"" & text item 2 of MachineName
+					set machineName to text item 1 of machineName & "\"" & text item 2 of machineName
 				end if
 			end if
-			if MachineName is "" then
-				set MachineName to "Unknown"
+			if machineName is "" then
+				set machineName to "Unknown"
 			end if
 		end if
-		set msg to msg & FBold & "Mac: " & FBold & MachineName & ItemDelimiter
+		set msg to msg & FBold & "Mac: " & FBold & machineName & ItemDelimiter
 		
 	end if
 	
@@ -488,78 +488,43 @@ on textualcmd(cmd)
 	
 	--HDD
 	if ViewDisk is true then
-		set TotalHDDFree to 0
-		set TotalHDDSpace to 0
-		if UseAllMountpoints is "True" then
-			tell application "Finder"
+		tell application "Finder"
+			set StartupDiskName to the name of (startup disk)
+			if UseAllMountpoints is "True" then
 				set DiskList to list disks
-				-- Do not use "/" if on Snow Leopard
-				if system version of (system info) contains "10.6" then
-					set DiskList to items -2 thru 1 of DiskList
-				end if
-				-- Do not use "home" nor "net" on Lion
-				if system version of (system info) contains "10.7" then
-					set DisksNotToUse to {"net", "home"}
-					set NewDiskList to {}
-					repeat with i from 1 to count DiskList
-						if {DiskList's item i} is not in DisksNotToUse then set NewDiskList's end to DiskList's item i
-					end repeat
-					set DiskList to NewDiskList
-				end if
-				-- If there is more than one disk
-				set NumberOfDisks to count items of DiskList
-				if NumberOfDisks > 1 then
-					repeat with i in DiskList
-						set diskName to (i as string)
-						try
-							-- Add all the free spaces and total capacity of the disks.
-							set FreeHDDSpace to round (the (free space of disk diskName) / 1024 / 1024)
-							set AllHDDSpace to round (the (capacity of disk diskName) / 1024 / 1024)
-							set TotalHDDFree to TotalHDDFree + FreeHDDSpace
-							set TotalHDDSpace to TotalHDDSpace + AllHDDSpace
-						end try
-					end repeat
-					-- Define the used space of all disks
-					set TotalHDDUsed to TotalHDDSpace - TotalHDDFree
-				else
-					-- If Just one disk.
-					set TotalHDDUsed to do shell script "df -k | tail +2 | awk '{print $3}' | tail -r | tail -1"
-					set TotalHDDUsed to (TotalHDDUsed / 1024) as integer
-					set TotalHDDSpace to do shell script "df -k | tail +2 | awk '{print $2}' | tail -r | tail -1"
-					set TotalHDDSpace to (TotalHDDSpace / 1024) as integer
-					set TotalHDDFree to TotalHDDSpace - TotalHDDUsed
-				end if
-			end tell
-			-- If UseAllMountpoints is False then (this is commented on purpose. Don't delete)
+			else
+				set DiskList to {StartupDiskName}
+			end if
+			set TotalFreeSpace to 0
+			set TotalDiskSpace to 0
+			repeat with CurrentDisk in DiskList
+				set CurrentDiskName to (CurrentDisk as string)
+				try
+					set DiskFreeSpace to round (the (free space of disk CurrentDiskName) / 1024 / 1024)
+					set DiskCapacity to round (the (capacity of disk CurrentDiskName) / 1024 / 1024)
+					set TotalFreeSpace to TotalFreeSpace + DiskFreeSpace
+					set TotalDiskSpace to TotalDiskSpace + DiskCapacity
+				end try
+			end repeat
+		end tell
+		set DiskUsedPercentage to round (((TotalDiskSpace - TotalFreeSpace) / TotalDiskSpace) * 100)
+		set TotalUsedSpace to (round ((TotalDiskSpace - TotalFreeSpace) / 1024) * 100) / 100
+		set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
+		if TotalUsedSpace is greater than 1024 then
+			set TotalUsedSpace to (round (TotalUsedSpace / 1024) * 100) / 100
+			set UsedSpaceUnit to "TiB"
 		else
-			set TotalHDDUsed to do shell script "df -k | tail +2 | awk '{print $3}' | tail -r | tail -1"
-			set TotalHDDUsed to (TotalHDDUsed / 1024)
-			set TotalHDDSpace to do shell script "df -k | tail +2 | awk '{print $2}' | tail -r | tail -1"
-			set TotalHDDSpace to (TotalHDDSpace / 1024)
+			set UsedSpaceUnit to "GiB"
 		end if
-		-- Creates Percentage to use on Bars.
-		set UsedHDDPercentage to round ((TotalHDDUsed / TotalHDDSpace) * 100) rounding to nearest
-		set TotalHDDUsed to TotalHDDUsed / 1024
-		set TotalHDDUsed to (round TotalHDDUsed * 100) / 100
-		set TotalHDDSpace to TotalHDDSpace / 1024
-		set TotalHDDSpace to (round TotalHDDSpace * 100) / 100
-		if TotalHDDUsed is greater than 1024 then
-			set TotalHDDUsed to TotalHDDUsed / 1024
-			set TotalHDDUsed to (round TotalHDDUsed * 100) / 100
-			set UsedHDDUnit to "TiB"
+		if TotalDiskSpace is greater than 1024 then
+			set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
+			set TotalSpaceUnit to "TiB"
 		else
-			set UsedHDDUnit to "GiB"
+			set TotalSpaceUnit to "GiB"
 		end if
-		if TotalHDDSpace is greater than 1024 then
-			set TotalHDDSpace to TotalHDDSpace / 1024
-			set TotalHDDSpace to (round TotalHDDSpace * 100) / 100
-			set TotalHDDUnit to "TiB"
-		else
-			set TotalHDDUnit to "GiB"
-		end if
-		set msg to msg & FBold & "HDD: " & FBold & TotalHDDUsed & UsedHDDUnit & "/" & TotalHDDSpace & TotalHDDUnit
+		set msg to msg & FBold & "HDD: " & FBold & TotalUsedSpace & UsedSpaceUnit & "/" & TotalDiskSpace & TotalSpaceUnit
 		if ViewBars is true then
-			set UsedHDDBar to round (UsedHDDPercentage / 10) rounding to nearest
+			set UsedHDDBar to round (DiskUsedPercentage / 10) rounding to nearest
 			set FreeHDDBar to 10 - UsedHDDBar
 			set OutputBar to "[" & UsedColor
 			repeat UsedHDDBar times
