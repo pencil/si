@@ -2,5 +2,6 @@
 	- Power (need logs of MacBooks and Mac Pro's with a UPS attached)
 	- Temperature (need external app and code to match it)
 * Fix code so it runs on other IRC clients without a change. (Maybe!)
+* Add structure and website for the script, else the updater won't work for future versions.
 
 
