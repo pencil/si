@@ -301,7 +301,7 @@ on textualcmd(cmd)
 			do shell script "curl -C - " & LatestZip & " -o " & UpdateZipPath
 			if LatestChecksum is not (do shell script "md5 -q " & UpdateZipPath) then
 				if LatestChecksum contains "DOCTYPE" then
-					return "/debug echo Error getting the online checksum for the latest  " & ScriptName & " version. Please try again later or download newest version here: http://xsysinfo.xeon3d.net "
+					return "/debug echo Error getting the online checksum for the latest  " & ScriptName & " version. Please try again later or download newest version here: " & ScriptHomepage
 				end if
 				return "/debug echo The " & ScriptName & " download was corrupted. Local MD5: " & (do shell script "md5 -q " & UpdateZipPath) & " - Online MD5: " & LatestChecksum & " . Please try again later or visit " & ScriptHomepage & " for more info."
 			end if
