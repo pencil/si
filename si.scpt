@@ -10,13 +10,13 @@
 
 -- | SCRIPT START | --
 -- |Properties| --
-
+property ClientName : name of current application
 property ScriptName : "si"
 property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.1.0"
+property CurrentVersion : "0.1.5"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -27,16 +27,24 @@ on textualcmd(cmd)
 	-- |Variables| --
 	
 	-- Defines the version of Textual where it's being run from.
-	set TextualVersion to version of application "Textual"
+	set ClientVersion to version of application ClientName
+	
+	-- Defines the POSIX path to the "Textual" application
+	set TextualPath to POSIX path of (path to application "Textual")
+	
+	-- Defines the path to the Mac Models plist (also used by the /sysinfo plugin)
+	set MachinesPlist to TextualPath & "Contents/Resources/Extensions/SystemProfiler.bundle/Contents/Resources/MacintoshModels.plist"
 	
 	-- Defines the path for the Scripts folder inside the Textual executable.
-	set InternalScriptsPath to the quoted form of (the POSIX path of (path to application id "com.codeux.irc.textual") & "Contents/Resources/Scripts/")
+	set InternalScriptsPath to the quoted form of (TextualPath & "Contents/Resources/Scripts/")
 	
 	-- Defines the path for the Scripts folder inside the ~/Library/ folder according to the version of Textual.
-	if TextualVersion > "2.0.99" then
-		set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual IRC/Scripts")
-	else
-		set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual/Scripts")
+	if ClientName is "Textual" then
+		if ClientVersion > "2.0.99" then
+			set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual IRC/Scripts")
+		else
+			set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual/Scripts")
+		end if
 	end if
 	
 	-- Defines the temporary working directory path.
@@ -44,17 +52,6 @@ on textualcmd(cmd)
 	
 	-- Defines the path where the files for the updates will be temporarily stored
 	set UpdateZipPath to the quoted form of (the POSIX path of (path to temporary items from the user domain) & "update.zip")
-	
-	-- Defines the POSIX path to the application that is running the script
-	set AppPath to path to frontmost application
-	set PAppPath to POSIX path of AppPath
-	
-	-- Defines the POSIX path to the "Textual" application
-	set TextualPath to path to application "Textual"
-	set PTextualPath to POSIX path of TextualPath
-	
-	-- Defines the path to the Mac Models plist (also used by the /sysinfo plugin)
-	set MachinesPlist to PTextualPath & "Contents/Resources/Extensions/SystemProfiler.bundle/Contents/Resources/MacintoshModels.plist"
 	
 	-- Defines Text Formatting
 	
@@ -99,6 +96,21 @@ on textualcmd(cmd)
 	end if
 	
 	--- User Options --
+	
+	-- This regards showing the final delimiter.
+	try
+		set HideLastDelimiter to do shell script "defaults read xeon3d.si HideLastDelimiter"
+	on error
+		try
+			do shell script ("defaults write xeon3d.si HideLastDelimiter True")
+			set HideLastDelimiter to "True"
+		on error
+			set msg to "/echo There was an error writing defaults HideLastDelimiter"
+			return msg
+		end try
+	end try
+	
+	
 	-- Defines if it uses all active mountpoints for disk space calculation or not.
 	try
 		set UseAllMountpoints to do shell script "defaults read xeon3d.si UseAllMountpoints"
@@ -143,14 +155,13 @@ on textualcmd(cmd)
 		set ViewCurrentCPUSpeed to true
 		set ViewCPUCapabilities to false
 		set ViewCPUCache to false
-		set ViewFSB to false
 		set ViewRam to true
 		set ViewBars to true
 		set ViewDisk to true
 		set ViewDisplay to true
 		set ViewGFXBus to false
 		set ViewResolutions to true
-		set ViewAudio to false
+		set ViewAudio to true
 		set ViewPower to true
 		set ViewOSXVersion to true
 		set ViewOSXArch to true
@@ -159,7 +170,8 @@ on textualcmd(cmd)
 		set ViewKernelTag to false
 		set ViewUptime to true
 		set ViewClient to true
-		set ViewCurrentVersion to true
+		set ViewClientBuild to true
+		set ViewScriptVersion to true
 	else
 		---- Checks which options the user supplied at runtime and acts accordingly.
 		set ViewMac to (cmd contains "mac")
@@ -168,14 +180,15 @@ on textualcmd(cmd)
 			set ViewCurrentCPUSpeed to (cmd contains "speed")
 			set ViewCPUCapabilities to (cmd contains "cap")
 			set ViewCPUCache to (cmd contains "cache")
-			set ViewFSB to (cmd contains "fsb")
 		end if
 		set ViewRam to (cmd contains "ram")
 		set ViewBars to (cmd contains "bar")
 		set ViewDisk to (cmd contains "disk")
 		set ViewDisplay to (cmd contains "gpu" or cmd contains "graphics" or cmd contains "video")
-		set ViewGFXBus to (cmd contains "gpu" or cmd contains "graphics" or cmd contains "video" and cmd contains "bus")
-		set ViewResolutions to (cmd contains "gpu" or cmd contains "graphics" or cmd contains "video" and cmd contains "res")
+		if ViewDisplay then
+			set ViewGFXBus to (cmd contains "bus")
+			set ViewResolutions to (cmd contains "res")
+		end if
 		set ViewAudio to (cmd contains "audio" or cmd contains "sound")
 		set ViewPower to (cmd contains "power")
 		set ViewOSXVersion to (cmd contains "osx")
@@ -185,21 +198,45 @@ on textualcmd(cmd)
 		set ViewKernelTag to (cmd contains "kerneltag")
 		set ViewUptime to (cmd contains "uptime")
 		set ViewClient to (cmd contains "client")
-		set ViewCurrentVersion to (cmd contains "script")
+		if ViewClient then
+			set ViewClientBuild to (cmd contains "clientbuild")
+		end if
+		set ViewScriptVersion to (cmd contains "script")
 	end if
 	
 	if cmd is "version" then
-		set msg to "Script Version: " & ScriptName & space & CurrentVersion & " for Textual by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
+		set msg to "Script Version: " & ScriptName & space & CurrentVersion & " for " & ClientName & " by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
 		return msg
 	end if
 	
 	if cmd is "options" then
 		set msg to "/echo Possible Options:" & NewLine & ¬
 			"/echo To change an option type '/" & ScriptName & " <option name> toggle'. Example: /" & ScriptName & " simple toggle " & NewLine & ¬
+			"/echo • HideLastDelimiter - Defines if the script should hide the final delimiter (as there are no more fields after." & FBold & " - Current Status: " & FBold & CRed & HideLastDelimiter & NewLine & ¬
 			"/echo • UseAllMountpoints - Defines if the script considers every mounted disk / net share as available disk space or not." & FBold & " - Current Status: " & FBold & CRed & UseAllMountpoints & NewLine & ¬
 			"/echo • Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine
 		return msg
 		
+	end if
+	
+	if cmd is "HideLastDelimiter" then
+		if HideLastDelimiter is "True" then
+			set msg to "/echo The last dot (delimiter) is currently " & FBold & "NOT" & FBold & " being shown. To change this type '/" & ScriptName & " HideLastDelimiter toggle'"
+			return msg
+		else if HideLastDelimiter is "False" then
+			set msg to "/echo The last dot (delimiter) is currently " & FBold & "BEING" & FBold & " shown. To change this type '/" & ScriptName & " HideLastDelimiter toggle'"
+			return msg
+		end if
+	end if
+	
+	if cmd is "HideLastDelimiter toggle" then
+		if HideLastDelimiter is "True" then
+			do shell script "defaults write xeon3d.si HideLastDelimiter False"
+			return "/echo The final delimiter is now being SHOWN!"
+		else if HideLastDelimiter is "False" then
+			do shell script "defaults write xeon3d.si HideLastDelimiter True"
+			return "/echo The final delimiter is now being HIDDEN!"
+		end if
 	end if
 	
 	if cmd is "UseAllMountpoints" then
@@ -326,7 +363,7 @@ on textualcmd(cmd)
 	set msg to ""
 	
 	--Mac Model
-	if ViewMac is true then
+	if ViewMac then
 		set MachineModel to do shell script "sysctl -n hw.model"
 		
 		if MachineModel is "VMware7,1" then
@@ -357,7 +394,7 @@ on textualcmd(cmd)
 	end if
 	
 	
-	if ViewCPU is true then
+	if ViewCPU then
 		set CPUModel to do shell script "sysctl machdep.cpu.brand_string | awk '{ print $2,$3,$4,$5,$6,$7,$8,$9 }'"
 		set CPUModel to my removetext(CPUModel, "(R)")
 		set CPUModel to my removetext(CPUModel, "(TM)")
@@ -369,7 +406,7 @@ on textualcmd(cmd)
 		set msg to msg & FBold & "CPU: " & FBold & CPUModel
 		
 		
-		if ViewCurrentCPUSpeed is true then
+		if ViewCurrentCPUSpeed then
 			set CPUFrequency to CPU speed of (system info)
 			set CPUFrequency to CPUFrequency * 1000000
 			if CPUFrequency / 1000000 ≥ 990 then
@@ -381,7 +418,7 @@ on textualcmd(cmd)
 			end if
 		end if
 		
-		if ViewCPUCapabilities is true then
+		if ViewCPUCapabilities then
 			set corecheck to do shell script "sysctl -n machdep.cpu.core_count"
 			set features to do shell script "sysctl -n machdep.cpu.features"
 			set extfeatures to do shell script "sysctl -n machdep.cpu.extfeatures"
@@ -423,7 +460,7 @@ on textualcmd(cmd)
 		end if
 		
 		--L2 Cache
-		if ViewCPUCache is true then
+		if ViewCPUCache then
 			set coreicheck to do shell script "sysctl machdep.cpu.brand_string"
 			if coreicheck contains "Core(TM) i" then
 				set cpucache to do shell script "sysctl -n hw.l3cachesize"
@@ -437,21 +474,20 @@ on textualcmd(cmd)
 	end if
 	
 	--Ram
-	if ViewRam is true then
+	if ViewRam then
 		set TotalMemory to do shell script "sysctl -n hw.memsize"
 		set TotalMemory to TotalMemory / 1024 / 1024 as integer
-		set FreeMemory to do shell script "top -l1 | grep 'PhysMem' | awk '{print $10}'"
-		if FreeMemory contains "G" then
+		set UsedMemory to do shell script "top -l1 | grep 'PhysMem' | awk '{print $8}'"
+		if UsedMemory contains "G" then
 			set AppleScript's text item delimiters to "G"
-			set FreeMemory to text item 1 of FreeMemory
-			set FreeMemory to FreeMemory * 1024
+			set UsedMemory to text item 1 of UsedMemory
+			set UsedMemory to UsedMemory * 1024
 			set AppleScript's text item delimiters to ""
 		else
 			set AppleScript's text item delimiters to "M"
-			set FreeMemory to text item 1 of FreeMemory
+			set UsedMemory to text item 1 of UsedMemory
 			set AppleScript's text item delimiters to ""
 		end if
-		set UsedMemory to TotalMemory - FreeMemory
 		set UsedMemoryBar to (UsedMemory / TotalMemory) * 100 as integer
 		set UsedMemoryBar to round (UsedMemoryBar / 10) rounding to nearest
 		if TotalMemory ≥ 1024 then
@@ -470,7 +506,7 @@ on textualcmd(cmd)
 		end if
 		
 		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
-		if ViewBars is true then
+		if ViewBars then
 			set FreeMemoryBar to 10 - UsedMemoryBar
 			set OutputBar to "[" & UsedColor
 			repeat UsedMemoryBar times
@@ -487,7 +523,7 @@ on textualcmd(cmd)
 	end if
 	
 	--HDD
-	if ViewDisk is true then
+	if ViewDisk then
 		tell application "Finder"
 			set StartupDiskName to the name of (startup disk)
 			if UseAllMountpoints is "True" then
@@ -523,7 +559,7 @@ on textualcmd(cmd)
 			set TotalSpaceUnit to "GiB"
 		end if
 		set msg to msg & FBold & "HDD: " & FBold & TotalUsedSpace & UsedSpaceUnit & "/" & TotalDiskSpace & TotalSpaceUnit
-		if ViewBars is true then
+		if ViewBars then
 			set UsedHDDBar to round (DiskUsedPercentage / 10) rounding to nearest
 			set FreeHDDBar to 10 - UsedHDDBar
 			set OutputBar to "[" & UsedColor
@@ -541,7 +577,7 @@ on textualcmd(cmd)
 	end if
 	
 	--Display
-	if ViewDisplay is true then
+	if ViewDisplay then
 		set SPGraphicsInfo to the paragraphs of (do shell script "system_profiler SPDisplaysDataType | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}'") as list
 		set VideoCard to item 1 of SPGraphicsInfo
 		set VideoCardBus to item 2 of SPGraphicsInfo
@@ -552,15 +588,15 @@ on textualcmd(cmd)
 			set VideoMemory to "2x" & trim(item 3 of SPGraphicsInfo)
 			set NrOfMonitors to ((count of items of SPGraphicsInfo) - 6)
 		end if
-		set msg to msg & FBold & "GPU: " & FBold & VideoCard & " "
+		set msg to msg & FBold & "GPU:" & FBold & VideoCard & " "
 		--GFXBus
-		if ViewGFXBus is true then
+		if ViewGFXBus then
 			set msg to msg & "[" & removetext(VideoCardBus, " ") & "] "
 		end if
 		--VRAM
 		set msg to msg & "[" & VideoMemory & "] "
 		--Resolutions
-		if ViewResolutions is true then
+		if ViewResolutions then
 			if NrOfMonitors is 1 then
 				set ResolutionMonitor1 to removetext(item 4 of SPGraphicsInfo, " ")
 				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1
@@ -584,6 +620,92 @@ on textualcmd(cmd)
 	end if
 	set msg to msg & ItemDelimiter
 	
+	--Audio
+	if ViewAudio then
+		set AudioCard to removetext(trim(do shell script "system_profiler SPAudioDataType | head -n3 | tail -n1"), ":")
+		if AudioCard is "Intel High Definition Audio" then
+			set AudioCard to "Intel HD"
+		else
+			set AudioCard to "Unknown"
+		end if
+		set msg to msg & FBold & "Audio: " & FBold & AudioCard & ItemDelimiter
+	end if
+	
+	--OS Version
+	if ViewOSXVersion then
+		set AppleScript's text item delimiters to space
+		set OSXInfo to the paragraphs of (do shell script "sw_vers | awk -F\"\\t\" '/BuildVersion:|ProductVersion|ProductName/ {print $2}'")
+		set msg to msg & FBold & "OS: " & FBold & items 1 thru 2 of OSXInfo & " "
+		set AppleScript's text item delimiters to ""
+		if ViewOSXBuild then
+			set OSXBuild to "[" & item 3 of OSXInfo & "] "
+			set msg to msg & OSXBuild
+		end if
+		if ViewOSXArch then
+			if (do shell script "uname -m") is "x86_64" then
+				set OSXArch to "64-bit"
+			else
+				set OSXArch to "32-bit"
+			end if
+			set msg to msg & OSXArch
+		end if
+		set msg to msg & ItemDelimiter
+	end if
+	
+	--Kernel Version
+	if ViewKernel then
+		set KernelInfo to (do shell script "uname -a | awk {'print $1,$3,$14'} | awk -F':' {'print $1,$2'} | awk -F'/' {'print $1'}")
+		set AppleScript's text item delimiters to space
+		set KernelVersion to text items 1 thru 2 of KernelInfo as string
+		set KernelTag to text item 4 of KernelInfo as string
+		set AppleScript's text item delimiters to ""
+		set msg to msg & FBold & "Kernel: " & FBold & KernelVersion
+		if ViewKernelTag then
+			set msg to msg & " (" & KernelTag & ")"
+		end if
+		set msg to msg & ItemDelimiter
+	end if
+	
+	--Uptime
+	if ViewUptime then
+		set uptime to do shell script "uptime | awk '{sub(/.*up[ ]+/,\"\",$0) ; sub(/,[ ]+[0-9]+ user.*/,\"\",$0);sub(/,/,\"\",$0) ;print $0}'"
+		repeat
+			if uptime contains "  " then
+				set AppleScript's text item delimiters to "  "
+				set temp1 to text item 1 of uptime
+				set temp2 to text items 2 thru end of uptime
+				set uptime to temp1 & " " & temp2
+			else
+				exit repeat
+			end if
+		end repeat
+		set msg to msg & FBold & "Uptime: " & FBold & uptime & ItemDelimiter
+	end if
+	
+	--Client
+	if ViewClient then
+		set msg to msg & FBold & "Client: " & FBold & ClientName & " " & ClientVersion
+		if ViewClientBuild then
+			set TextualBuild to do shell script "cat " & TextualPath & "Contents/Info.plist | grep Reference -A 1 | tail -n 1 | awk -F'>' {'print $2'} | awk -F'<' {'print $1'}"
+			set msg to msg & " [" & TextualBuild & "]"
+		end if
+		set msg to msg & ItemDelimiter
+	end if
+	
+	--Script Version
+	if ViewScriptVersion then
+		set msg to msg & FBold & "Script: " & FBold & ScriptName & " " & CurrentVersion & ItemDelimiter
+	end if
+	
+	--Remove last separator
+	if HideLastDelimiter is "True" then
+		repeat until msg does not end with " "
+			set msg to text 1 thru -2 of msg
+		end repeat
+		repeat until msg does not end with "•"
+			set msg to text 1 thru -2 of msg
+		end repeat
+	end if
 	
 	return msg
 end textualcmd
