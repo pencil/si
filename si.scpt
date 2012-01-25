@@ -326,20 +326,6 @@ on textualcmd(cmd)
 		end if
 	end if
 	
-	if cmd is "refresh" then
-		tell application "Finder"
-			if exists POSIX file "/tmp/SPHardwareDataType.txt" then
-				do shell script "rm -rf /tmp/SPHardwareDataType.txt"
-			end if
-			if exists POSIX file "/tmp/SPDisplaysDataType.txt" then
-				do shell script "rm -rf /tmp/SPDisplaysDataType.txt"
-			end if
-			if exists POSIX file "/tmp/SPPowerDataType.txt" then
-				do shell script "rm -rf /tmp/SPPowerDataType.txt"
-			end if
-		end tell
-	end if
-	
 	if cmd is "help" then
 		set msg to ¬
 			"/echo " & FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine & ¬
@@ -718,15 +704,6 @@ on cutforward(orig, ponto)
 		set orig to orig
 	end if
 end cutforward
-
-on cutbackward(orig, ponto)
-	if orig contains ponto then
-		set AppleScript's text item delimiters to ponto
-		set orig to text items 2 thru the end of orig
-	else
-		set orig to orig
-	end if
-end cutbackward
 
 on trim(orig)
 	repeat until orig does not start with " "
