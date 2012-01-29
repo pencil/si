@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.1.5"
+property CurrentVersion : "0.1.6"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -616,6 +616,36 @@ on textualcmd(cmd)
 		end if
 		set msg to msg & FBold & "Audio: " & FBold & AudioCard & ItemDelimiter
 	end if
+	
+	--Power
+	if ViewPower then
+		try
+			--	set PowerInfo to do shell script "cat /Users/xeon3d/reports/dischargingnoestimate.txt| head -n2 | tail -n1 | awk {'print $2,$3,$4'}"
+			set PowerInfo to do shell script "pmset -g ps | head -n2 | tail -n1 | awk {'print $2,$3,$4}"
+			set AppleScript's text item delimiters to "; "
+			set BatteryCapacity to text item 1 of PowerInfo
+			set BatteryStatus to text item 2 of PowerInfo
+			if BatteryStatus is "charging" then
+				set BatteryCapacity to CGreen & BatteryCapacity & CWhite
+			else if BatteryStatus is "discharging" then
+				set BatteryCapacity to CRed & BatteryCapacity & CWhite
+			else
+				set BatteryCapacity to BatteryCapacity
+			end if
+			set TimeLeft to text item 3 of PowerInfo
+			if TimeLeft contains "(no" then
+				set TimeLeft to space & "[-:--]"
+			else if TimeLeft is "0:00" then
+				set TimeLeft to ""
+			else
+				set TimeLeft to space & "[" & text item 3 of PowerInfo & "]"
+			end if
+			set msg to msg & FBold & "Power: " & FBold & BatteryCapacity & TimeLeft & ItemDelimiter
+		on error
+			set msg to msg
+		end try
+	end if
+	
 	
 	--OS Version
 	if ViewOSXVersion then
