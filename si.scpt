@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.1.7"
+property CurrentVersion : "0.1.8"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -564,47 +564,108 @@ on textualcmd(cmd)
 	
 	--Display
 	if ViewDisplay then
-		set SPGraphicsInfo to the paragraphs of (do shell script "system_profiler SPDisplaysDataType | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}'") as list
-		set VideoCard to item 1 of SPGraphicsInfo
-		set VideoCardBus to item 2 of SPGraphicsInfo
-		set VideoMemory to trim(item 3 of SPGraphicsInfo)
-		set NrOfMonitors to ((count of items of SPGraphicsInfo) - 3)
-		if (count items of SPGraphicsInfo) ≥ 6 then
-			set VideoCard to "2x" & trim(item 1 of SPGraphicsInfo)
-			set VideoMemory to "2x" & trim(item 3 of SPGraphicsInfo)
-			set NrOfMonitors to ((count of items of SPGraphicsInfo) - 6)
+		set SPGraphicsInfo to the paragraphs of (do shell script "system_profiler SPDisplaysDataType | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
+		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/2gpumbp2011.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
+		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/gpumbp2011.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
+		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/gpumacpro.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
+		set aGPU1 to {}
+		set aGPU2 to {}
+		set GPUsAvailable to ""
+		set ActiveGPU to 0
+		repeat with i in SPGraphicsInfo
+			if i contains "AMD" or i contains "Intel" or i contains "NVIDIA" or i contains "ATI" then
+				if aGPU1 is {} then
+					set aGPU1's beginning to i as text
+					set GPUsAvailable to 1
+				else
+					set aGPU2's beginning to i as text
+					set GPUsAvailable to 2
+				end if
+			else if i contains "PCIe" or i contains "Built-In" then
+				if (count of items of aGPU1) is 1 then
+					set aGPU1's end to i as text
+				else
+					set aGPU2's end to i as text
+				end if
+			else if i contains "MB" or i contains "GB" then
+				if (count of items of aGPU1) is 2 then
+					set aGPU1's end to i as text
+				else
+					set aGPU2's end to i as text
+				end if
+			else if i contains " x " then
+				if (count of items of SPGraphicsInfo) is 7 and (SPGraphicsInfo's last item) as text is equal to i as text then
+					set aGPU2's end to i as text
+				else
+					if aGPU1's item (count of items of aGPU1) contains " x " and aGPU1's item ((count of items of aGPU1) - 1) contains " x " then
+						set aGPU2's end to i as text
+					else
+						set aGPU1's end to i as text
+					end if
+				end if
+			end if
+		end repeat
+		if GPUsAvailable is 1 then
+			set VideoCard to item 1 of aGPU1
+			set VideoCardBus to item 2 of aGPU1
+			set VideoMemory to item 3 of aGPU1
+			set NrOfMonitors to ((count of items of aGPU1) - 3)
+		else
+			if (count of items of aGPU2) > (count of items of aGPU1) then
+				set VideoCard to item 1 of aGPU2
+				set VideoCardBus to item 2 of aGPU2
+				set VideoMemory to item 3 of aGPU2
+				set NrOfMonitors to ((count of items of aGPU2) - 3)
+				set ActiveGPU to 2
+			else if ((count of items of aGPU2) + (count of items of aGPU1)) > 8 then
+				set VideoCard to "2x" & space & item 1 of aGPU1
+				set VideoCardBus to item 2 of aGPU1
+				set VideoMemory to "2x" & space & item 3 of aGPU1
+				set NrOfMonitors to (((count of items of aGPU1) + (count of items of aGPU2)) - 6)
+				set ActiveGPU to 3
+			else
+				set VideoCard to item 1 of aGPU1
+				set VideoCardBus to item 2 of aGPU1
+				set VideoMemory to item 3 of aGPU1
+				set NrOfMonitors to ((count of items of aGPU1) - 3)
+				set ActiveGPU to 1
+			end if
 		end if
-		set msg to msg & FBold & "GPU:" & FBold & VideoCard & " "
+		set msg to msg & FBold & "GPU: " & FBold & VideoCard & " "
 		--GFXBus
 		if ViewGFXBus then
-			set msg to msg & "[" & removetext(VideoCardBus, " ") & "] "
+			set msg to msg & "[" & VideoCardBus & "] "
 		end if
 		--VRAM
 		set msg to msg & "[" & VideoMemory & "] "
 		--Resolutions
 		if ViewResolutions then
 			if NrOfMonitors is 1 then
-				set ResolutionMonitor1 to removetext(item 4 of SPGraphicsInfo, " ")
+				if ActiveGPU is 1 then
+					set ResolutionMonitor1 to item 4 of aGPU1
+				else
+					set ResolutionMonitor1 to item 4 of aGPU2
+				end if
 				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1
 			else if NrOfMonitors is 2 then
-				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor1 to item 4 of aGPU1
+				set ResolutionMonitor2 to item 5 of aGPU1
 				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2
 			else if NrOfMonitors is 3 then
-				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor3 to cutforward(removetext(item 9 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor1 to item 4 of aGPU1
+				set ResolutionMonitor2 to item 5 of aGPU1
+				set ResolutionMonitor3 to item 4 of aGPU2
 				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2 & " & " & ResolutionMonitor3
 			else if NrOfMonitors is 4 then
-				set ResolutionMonitor1 to cutforward(removetext(item 4 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor2 to cutforward(removetext(item 5 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor3 to cutforward(removetext(item 9 of SPGraphicsInfo, " "), "@")
-				set ResolutionMonitor4 to cutforward(removetext(item 10 of SPGraphicsInfo, " "), "@")
+				set ResolutionMonitor1 to item 4 of aGPU1
+				set ResolutionMonitor2 to item 5 of aGPU1
+				set ResolutionMonitor3 to item 4 of aGPU2
+				set ResolutionMonitor4 to item 5 of aGPU2
 				set msg to msg & FBold & "Res: " & FBold & ResolutionMonitor1 & " & " & ResolutionMonitor2 & " & " & ResolutionMonitor3 & " & " & ResolutionMonitor4
 			end if
 		end if
+		set msg to msg & ItemDelimiter
 	end if
-	set msg to msg & ItemDelimiter
 	
 	--Audio
 	if ViewAudio then
