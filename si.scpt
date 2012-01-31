@@ -16,11 +16,12 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.1.9"
+property CurrentVersion : "0.2.0"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
 --set cmd to ""
+--textualcmd(cmd)
 
 on textualcmd(cmd)
 	
@@ -568,6 +569,7 @@ on textualcmd(cmd)
 		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/2gpumbp2011.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
 		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/gpumbp2011.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
 		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/Downloads/gpumacpro.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
+		--set SPGraphicsInfo to the paragraphs of (do shell script "cat /Users/xeon3d/epiratgpu.txt | awk -F: ' /Chipset|Bus|Resolution|VRAM/ {print $NF}' | sed 's/^.//g' | awk -F' @' '{print $1}'") as list
 		set aGPU1 to {}
 		set aGPU2 to {}
 		set GPUsAvailable to ""
@@ -610,6 +612,7 @@ on textualcmd(cmd)
 			set VideoCardBus to item 2 of aGPU1
 			set VideoMemory to item 3 of aGPU1
 			set NrOfMonitors to ((count of items of aGPU1) - 3)
+			set ActiveGPU to 1
 		else
 			if (count of items of aGPU2) > (count of items of aGPU1) then
 				set VideoCard to item 1 of aGPU2
@@ -632,6 +635,7 @@ on textualcmd(cmd)
 			end if
 		end if
 		set msg to msg & FBold & "GPU: " & FBold & VideoCard & " "
+		
 		--GFXBus
 		if ViewGFXBus then
 			set msg to msg & "[" & VideoCardBus & "] "
