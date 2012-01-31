@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.1.8"
+property CurrentVersion : "0.1.9"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -581,7 +581,7 @@ on textualcmd(cmd)
 					set aGPU2's beginning to i as text
 					set GPUsAvailable to 2
 				end if
-			else if i contains "PCIe" or i contains "Built-In" then
+			else if i contains "PCIe" or i contains "Built-In" or i contains "PCI" then
 				if (count of items of aGPU1) is 1 then
 					set aGPU1's end to i as text
 				else
