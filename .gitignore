@@ -25,6 +25,7 @@
 *.log
 *.sql
 *.sqlite
+*.txt
 
 # OS generated files #
 ######################
@@ -32,3 +33,6 @@
 ehthumbs.db
 Icon?
 Thumbs.db
+SPLogs
+latest
+latestmd5
