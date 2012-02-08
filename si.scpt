@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.2.2"
+property CurrentVersion : "0.2.3"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -460,30 +460,20 @@ on textualcmd(cmd)
 	
 	--Ram
 	if ViewRam then
-		set TotalMemory to do shell script "sysctl -n hw.memsize"
-		set TotalMemory to TotalMemory / 1024 / 1024 as integer
-		set UsedMemory to do shell script "top -l1 | grep 'PhysMem' | awk '{print $8}'"
-		if UsedMemory contains "G" then
-			set AppleScript's text item delimiters to "G"
-			set UsedMemory to text item 1 of UsedMemory
-			set UsedMemory to UsedMemory * 1024
-			set AppleScript's text item delimiters to ""
-		else
-			set AppleScript's text item delimiters to "M"
-			set UsedMemory to text item 1 of UsedMemory
-			set AppleScript's text item delimiters to ""
-		end if
+		set MemoryStats to the paragraphs of (do shell script "vm_stat | head -n6 | tail -n5 | awk {'print $NF'} | awk 'sub(\".$\", \"\")'") as list
+		set TotalMemory to round (((item 1 of MemoryStats) + (item 2 of MemoryStats) + (item 3 of MemoryStats) + (item 5 of MemoryStats)) * 4096) / 1048576 rounding to nearest
+		set FreeMemory to round (((item 1 of MemoryStats) + (item 3 of MemoryStats)) * 4096) / 1048576 rounding to nearest
+		set UsedMemory to TotalMemory - FreeMemory
 		set UsedMemoryBar to (UsedMemory / TotalMemory) * 100 as integer
 		set UsedMemoryBar to round (UsedMemoryBar / 10) rounding to nearest
 		if TotalMemory ≥ 1024 then
-			set TotalMemory to (TotalMemory round) / 1024
+			set TotalMemory to (round ((TotalMemory / 1024) * 100)) / 100
 			set TotalMemoryUnit to "GiB"
 		else
 			set TotalMemoryUnit to "MiB"
 		end if
 		if UsedMemory ≥ 1024 then
-			set UsedMemory to UsedMemory / 1024
-			set UsedMemory to (round (UsedMemory * 100)) / 100
+			set UsedMemory to (round ((UsedMemory / 1024) * 100)) / 100
 			set UsedMemoryUnit to "GiB"
 		else
 			set UsedMemory to (round (UsedMemory * 100)) / 100
