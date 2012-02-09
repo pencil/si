@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.2.3"
+property CurrentVersion : "0.2.4"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -449,10 +449,10 @@ on textualcmd(cmd)
 			set coreicheck to do shell script "sysctl machdep.cpu.brand_string"
 			if coreicheck contains "Core(TM) i" then
 				set cpucache to do shell script "sysctl -n hw.l3cachesize"
-				set msg to msg & FBold & " L3: " & FBold & (round (cpucache / 1024 / 1024)) & "MiB"
+				set msg to msg & FBold & " L3: " & FBold & (round (cpucache / 1024 / 1024)) & "MB"
 			else
 				set cpucache to do shell script "sysctl -n hw.l2cachesize"
-				set msg to msg & FBold & " L2: " & FBold & (round (cpucache / 1024 / 1024)) & "MiB"
+				set msg to msg & FBold & " L2: " & FBold & (round (cpucache / 1024 / 1024)) & "MB"
 			end if
 		end if
 		set msg to msg & ItemDelimiter
@@ -462,22 +462,22 @@ on textualcmd(cmd)
 	if ViewRam then
 		set MemoryStats to the paragraphs of (do shell script "vm_stat | head -n6 | tail -n5 | awk {'print $NF'} | awk 'sub(\".$\", \"\")'") as list
 		set TotalMemory to round (((item 1 of MemoryStats) + (item 2 of MemoryStats) + (item 3 of MemoryStats) + (item 5 of MemoryStats)) * 4096) / 1048576 rounding to nearest
-		set FreeMemory to round (((item 1 of MemoryStats) + (item 3 of MemoryStats)) * 4096) / 1048576 rounding to nearest
+		set FreeMemory to round ((item 1 of MemoryStats) * 4096) / 1048576 rounding to nearest
 		set UsedMemory to TotalMemory - FreeMemory
 		set UsedMemoryBar to (UsedMemory / TotalMemory) * 100 as integer
 		set UsedMemoryBar to round (UsedMemoryBar / 10) rounding to nearest
 		if TotalMemory ≥ 1024 then
 			set TotalMemory to (round ((TotalMemory / 1024) * 100)) / 100
-			set TotalMemoryUnit to "GiB"
+			set TotalMemoryUnit to "GB"
 		else
-			set TotalMemoryUnit to "MiB"
+			set TotalMemoryUnit to "MB"
 		end if
 		if UsedMemory ≥ 1024 then
 			set UsedMemory to (round ((UsedMemory / 1024) * 100)) / 100
-			set UsedMemoryUnit to "GiB"
+			set UsedMemoryUnit to "GB"
 		else
 			set UsedMemory to (round (UsedMemory * 100)) / 100
-			set UsedMemoryUnit to "MiB"
+			set UsedMemoryUnit to "MB"
 		end if
 		
 		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
@@ -525,13 +525,13 @@ on textualcmd(cmd)
 			set TotalUsedSpace to (round (TotalUsedSpace / 1024) * 100) / 100
 			set UsedSpaceUnit to "TiB"
 		else
-			set UsedSpaceUnit to "GiB"
+			set UsedSpaceUnit to "GB"
 		end if
 		if TotalDiskSpace is greater than 1024 then
 			set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
 			set TotalSpaceUnit to "TiB"
 		else
-			set TotalSpaceUnit to "GiB"
+			set TotalSpaceUnit to "GB"
 		end if
 		set msg to msg & FBold & "HDD: " & FBold & TotalUsedSpace & UsedSpaceUnit & "/" & TotalDiskSpace & TotalSpaceUnit
 		if ViewBars then
