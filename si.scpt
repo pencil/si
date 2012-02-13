@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.2.7"
+property CurrentVersion : "0.2.8"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -521,7 +521,7 @@ on textualcmd(cmd)
 		set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
 		if TotalUsedSpace is greater than 1024 then
 			set TotalUsedSpace to (round (TotalUsedSpace / 1024) * 100) / 100
-			set UsedSpaceUnit to "TiB"
+			set UsedSpaceUnit to "TB"
 		else
 			set UsedSpaceUnit to "GB"
 		end if
@@ -661,9 +661,11 @@ on textualcmd(cmd)
 	
 	--Audio
 	if ViewAudio then
-		set AudioCard to removetext(trim(do shell script "system_profiler SPAudioDataType | head -n3 | tail -n1"), ":")
-		if AudioCard is "Intel High Definition Audio" then
-			set AudioCard to "Intel HD"
+		set AudioCard to do shell script "kextstat | grep HDA"
+		if AudioCard contains "VoodooHDA" then
+			set AudioCard to "Voodoo HD Audio"
+		else if AudioCard contains "AppleHDA" then
+			set AudioCard to "Apple HD Audio"
 		else
 			set AudioCard to "Unknown"
 		end if
