@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.2.8"
+property CurrentVersion : "0.2.9"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 -- | DEBUG COMMAND | --
@@ -135,14 +135,12 @@ on textualcmd(cmd)
 		end try
 	end try
 	
-	-- This sets the item delimiter. To change on a terminal type: defaults write xeon3d.si ItemDelimiter <item> (1 char)
-	try
-		set ItemDelimiter to " - " & (do shell script "defaults read xeon3d.si ItemDelimiter") & " - "
-	on error
-		set ItemDelimiter to " • "
-	end try
+	-- This sets the item delimiter.
+	set ItemDelimiter to " • "
 	
-	
+	if cmd is "all" then
+		set cmd to "mac cpu speed cap cache ram bar disk gpu bus res audio power osx osxbuild osxarch kernel kerneltag uptime client clientbuild script"
+	end if
 	
 	-- Defines default runtime options.
 	
@@ -527,7 +525,7 @@ on textualcmd(cmd)
 		end if
 		if TotalDiskSpace is greater than 1024 then
 			set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
-			set TotalSpaceUnit to "TiB"
+			set TotalSpaceUnit to "TB"
 		else
 			set TotalSpaceUnit to "GB"
 		end if
