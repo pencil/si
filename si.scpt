@@ -16,11 +16,36 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.2.9"
+property CurrentVersion : "0.3.1"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
+
+---  Colors
+property CBlack : (ASCII character 3) & "01"
+property CNBlue : (ASCII character 3) & "02"
+property CGreen : (ASCII character 3) & "03"
+property CRed : (ASCII character 3) & "04"
+property CBrown : (ASCII character 3) & "05"
+property CPurple : (ASCII character 3) & "06"
+property COrange : (ASCII character 3) & "07"
+property CYellow : (ASCII character 3) & "08"
+property CLGreen : (ASCII character 3) & "09"
+property CTeal : (ASCII character 3) & "10"
+property CCyan : (ASCII character 3) & "11"
+property CBlue : (ASCII character 3) & "12"
+property CPink : (ASCII character 3) & "13"
+property CGrey : (ASCII character 3) & "14"
+property CLGrey : (ASCII character 3) & "15"
+property CWhite : (ASCII character 3)
+property NoColor : (ASCII character 0)
+
+-- Defines the Bars' Colors
+property UsedColor : CRed
+property FreeColor : CGreen
+property SeparatorColor : COrange
 
 -- | DEBUG COMMAND | --
 --set cmd to ""
+
 on textualcmd(cmd)
 	-- |Variables| --
 	
@@ -56,38 +81,16 @@ on textualcmd(cmd)
 	--- Initializes the Simple variable.
 	set Simple to ""
 	
-	---  Colors
-	set CBlack to (ASCII character 3) & "01"
-	set CNBlue to (ASCII character 3) & "02"
-	set CGreen to (ASCII character 3) & "03"
-	set CRed to (ASCII character 3) & "04"
-	set CBrown to (ASCII character 3) & "05"
-	set CPurple to (ASCII character 3) & "06"
-	set COrange to (ASCII character 3) & "07"
-	set CYellow to (ASCII character 3) & "08"
-	set CLGreen to (ASCII character 3) & "09"
-	set CTeal to (ASCII character 3) & "10"
-	set CCyan to (ASCII character 3) & "11"
-	set CBlue to (ASCII character 3) & "12"
-	set CPink to (ASCII character 3) & "13"
-	set CGrey to (ASCII character 3) & "14"
-	set CLGrey to (ASCII character 3) & "15"
-	set CWhite to (ASCII character 3)
-	set NoColor to (ASCII character 0)
 	
 	--- Formatting
 	set FBold to (ASCII character 2)
 	set FItalic to (ASCII character 1)
 	set NewLine to (ASCII character 10)
 	
-	-- Defines the Bars' Colors
-	set UsedColor to CRed
-	set FreeColor to CGreen
-	set SeparatorColor to COrange
-	
 	if (cmd contains "simple") or (Simple is true or Simple is "True") then
 		set UsedColor to ""
 		set FreeColor to ""
+		set SeparatorColor to ""
 		set CWhite to ""
 		set FBold to ""
 		set FItalic to ""
@@ -157,6 +160,7 @@ on textualcmd(cmd)
 		set ViewDisplay to true
 		set ViewGFXBus to false
 		set ViewResolutions to true
+		set ViewNetwork to true
 		set ViewAudio to true
 		set ViewPower to true
 		set ViewOSXVersion to true
@@ -185,6 +189,7 @@ on textualcmd(cmd)
 			set ViewGFXBus to (cmd contains "bus")
 			set ViewResolutions to (cmd contains "res")
 		end if
+		set ViewNetwork to (cmd contains "net")
 		set ViewAudio to (cmd contains "audio" or cmd contains "sound")
 		set ViewPower to (cmd contains "power")
 		set ViewOSXVersion to (cmd contains "osx")
@@ -281,9 +286,6 @@ on textualcmd(cmd)
 		--- Defines the latest available script version's zip file checksum
 		set LatestChecksum to do shell script "curl " & LatestChecksum
 		
-		--- Defines the URL of the Script's Changelog
-		set ChangelogURL to ScriptDownloadFolderURL & "changelog"
-		
 		--- Defines the zip file URL of the latest version
 		set LatestZip to ScriptDownloadFolderURL & ScriptName & "-" & LatestVersion & ".zip"
 		
@@ -307,7 +309,7 @@ on textualcmd(cmd)
 				do shell script "rm -f " & ExternalScriptsPath & "/xsys*.scpt"
 				do shell script "unzip -o " & UpdateZipPath & " -d " & ExternalScriptsPath
 				do shell script "rm -f " & UpdateZipPath
-				set ResultMessage to "/echo Successefully updated " & ScriptName & " to version " & LatestVersion & " from " & CurrentVersion & "." & NewLine & "/echo Changelog: " & ChangelogURL
+				set ResultMessage to "/echo Successefully updated " & ScriptName & " to version " & LatestVersion & " from " & CurrentVersion & "."
 				return ResultMessage
 			else if DownloadedUpdateCheck contains "cannot find" then
 				set ResultMessage to "/echo Error extracting " & ScriptName & ". Try again later or download a previous version from " & ScriptHomepage
@@ -393,10 +395,10 @@ on textualcmd(cmd)
 			set CPUFrequency to CPUFrequency * 1000000
 			if CPUFrequency / 1000000 ≥ 990 then
 				set CPUFrequency to (CPUFrequency / 100000000) / 10
-				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "GHz"
+				set msg to msg & " @ " & "" & roundThis(CPUFrequency, 2) & "GHz"
 			else
 				set temp to (CPUFrequency / 1000000)
-				set msg to msg & " @ " & "" & (round CPUFrequency * 100) / 100 & "MHz"
+				set msg to msg & " @ " & "" & roundThis(CPUFrequency, 2) & "MHz"
 			end if
 		end if
 		
@@ -458,36 +460,35 @@ on textualcmd(cmd)
 	--Ram
 	if ViewRam then
 		set TotalMemory to (round (do shell script "sysctl -n hw.memsize") / 1048576)
-		set FreeMemory to (round (do shell script "vm_stat | grep free | awk {'print $3'}") * 4096 / 1048576)
+		set MemStats to do shell script "top -l1 | grep PhysMem | awk '{print $8,$10}'"
+		set AppleScript's text item delimiters to space
+		set TopUsedMemory to MemStats's text item 1
+		set TopFreeMemory to MemStats's text item 2
+		set AppleScript's text item delimiters to ""
+		if TopFreeMemory contains "M" then
+			set FreeMemory to removetext(TopFreeMemory, "M")
+		else
+			set FreeMemory to (TotalMemory - (removetext(TopUsedMemory, "M")))
+		end if
 		set UsedMemory to TotalMemory - FreeMemory
-		set UsedMemoryBar to (UsedMemory / TotalMemory) * 100 as integer
-		set UsedMemoryBar to round (UsedMemoryBar / 10) rounding to nearest
+		set UsedMemoryBar to round ((UsedMemory / TotalMemory) * 100) / 10 as integer
 		if TotalMemory ≥ 1024 then
-			set TotalMemory to (round ((TotalMemory / 1024) * 100)) / 100
+			set TotalMemory to roundThis((TotalMemory / 1024), 2)
 			set TotalMemoryUnit to "GB"
 		else
 			set TotalMemoryUnit to "MB"
 		end if
 		if UsedMemory ≥ 1024 then
-			set UsedMemory to (round ((UsedMemory / 1024) * 100)) / 100
+			set UsedMemory to roundThis((UsedMemory / 1024), 2)
 			set UsedMemoryUnit to "GB"
 		else
-			set UsedMemory to (round (UsedMemory * 100)) / 100
+			set UsedMemory to roundThis((UsedMemory * 100), 2)
 			set UsedMemoryUnit to "MB"
 		end if
 		
 		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
 		if ViewBars then
-			set FreeMemoryBar to 10 - UsedMemoryBar
-			set OutputBar to "[" & UsedColor
-			repeat UsedMemoryBar times
-				set OutputBar to OutputBar & "❙"
-			end repeat
-			set OutputBar to OutputBar & SeparatorColor & "|" & FreeColor
-			repeat FreeMemoryBar times
-				set OutputBar to OutputBar & "❙"
-			end repeat
-			set OutputBar to OutputBar & CWhite & "]"
+			set OutputBar to MakeBars(UsedMemoryBar)
 			set msg to msg & " " & OutputBar
 		end if
 		set msg to msg & ItemDelimiter
@@ -515,16 +516,16 @@ on textualcmd(cmd)
 			end repeat
 		end tell
 		set DiskUsedPercentage to round (((TotalDiskSpace - TotalFreeSpace) / TotalDiskSpace) * 100)
-		set TotalUsedSpace to (round ((TotalDiskSpace - TotalFreeSpace) / 1024) * 100) / 100
-		set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
+		set TotalUsedSpace to roundThis(((TotalDiskSpace - TotalFreeSpace) / 1024), 2)
+		set TotalDiskSpace to roundThis((TotalDiskSpace / 1024), 2)
 		if TotalUsedSpace is greater than 1024 then
-			set TotalUsedSpace to (round (TotalUsedSpace / 1024) * 100) / 100
+			set TotalUsedSpace to roundThis((TotalUsedSpace / 1024), 2)
 			set UsedSpaceUnit to "TB"
 		else
 			set UsedSpaceUnit to "GB"
 		end if
 		if TotalDiskSpace is greater than 1024 then
-			set TotalDiskSpace to (round (TotalDiskSpace / 1024) * 100) / 100
+			set TotalDiskSpace to roundThis((TotalDiskSpace / 1024), 2)
 			set TotalSpaceUnit to "TB"
 		else
 			set TotalSpaceUnit to "GB"
@@ -532,16 +533,7 @@ on textualcmd(cmd)
 		set msg to msg & FBold & "HDD: " & FBold & TotalUsedSpace & UsedSpaceUnit & "/" & TotalDiskSpace & TotalSpaceUnit
 		if ViewBars then
 			set UsedHDDBar to round (DiskUsedPercentage / 10) rounding to nearest
-			set FreeHDDBar to 10 - UsedHDDBar
-			set OutputBar to "[" & UsedColor
-			repeat UsedHDDBar times
-				set OutputBar to OutputBar & "❙"
-			end repeat
-			set OutputBar to OutputBar & SeparatorColor & "|" & FreeColor
-			repeat FreeHDDBar times
-				set OutputBar to OutputBar & "❙"
-			end repeat
-			set OutputBar to OutputBar & CWhite & "]"
+			set OutputBar to MakeBars(UsedHDDBar)
 			set msg to msg & " " & OutputBar
 		end if
 		set msg to msg & ItemDelimiter
@@ -656,6 +648,66 @@ on textualcmd(cmd)
 		end if
 		set msg to msg & ItemDelimiter
 	end if
+	
+	--Network
+	if ViewNetwork then
+		set findactiveip to do shell script "netstat -an | head -n3 | tail -n1 | awk {'print $4'}"
+		set AppleScript's text item delimiters to "."
+		set findactiveip to text items 1 thru -2 of findactiveip as text
+		set AppleScript's text item delimiters to ""
+		set activeadapter to the first word of (do shell script "ifconfig | grep " & findactiveip & " -B 3 | head -n1")
+		set bw1 to do shell script "netstat -b -I " & activeadapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
+		set AppleScript's text item delimiters to space
+		set upbytes1 to (text item 1 of bw1) / 1048576
+		set downbytes1 to (text item 2 of bw1) / 1048576
+		set AppleScript's text item delimiters to ""
+		delay 1
+		set bw2 to do shell script "netstat -b -I " & activeadapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
+		set AppleScript's text item delimiters to space
+		set upbytes2 to (text item 1 of bw2) / 1048576
+		set downbytes2 to (text item 2 of bw2) / 1048576
+		set AppleScript's text item delimiters to ""
+		set trafficdown to roundThis(downbytes2 / 1024, 3)
+		set trafficup to roundThis(upbytes2 / 1024, 3)
+		if trafficdown > 1 then
+			set tdunit to "GB"
+			set trafficdown to roundThis(trafficdown, 2) & tdunit
+		else
+			set tdunit to "MB"
+			set trafficdown to (trafficdown * 1000 as integer) & tdunit
+		end if
+		if trafficup > 1 then
+			set tuunit to "GB"
+			set trafficup to roundThis(trafficup, 2) & tuunit
+		else
+			set tuunit to "MB"
+			set trafficup to (trafficup * 1000 as integer) & tuunit
+		end if
+		set updiff to (upbytes2 - upbytes1)
+		set downdiff to (downbytes2 - downbytes1)
+		set downspeed to roundThis(downdiff, 3)
+		set upspeed to roundThis(updiff, 3)
+		if downspeed > 1 then
+			set dunit to "MB/s"
+			set downspeed to roundThis(downspeed, 2)
+			set downspeed to downspeed & dunit
+		else
+			set dunit to "KB/s"
+			set downspeed to downspeed * 1000 as integer
+			set downspeed to downspeed & dunit
+		end if
+		if upspeed > 1 then
+			set uunit to "MB/s"
+			set upspeed to roundThis(upspeed, 2)
+			set upspeed to upspeed & uunit
+		else
+			set uunit to "KB/s"
+			set upspeed to upspeed * 1000 as integer
+			set upspeed to upspeed & uunit
+		end if
+		set msg to msg & FBold & "Net: " & FBold & "[" & activeadapter & "] D:" & downspeed & " [" & trafficdown & "] - U:" & upspeed & " [" & trafficup & "]" & ItemDelimiter
+	end if
+	
 	
 	--Audio
 	if ViewAudio then
@@ -808,3 +860,20 @@ on removetext(orig, texttoremove)
 	return orig
 end removetext
 
+on MakeBars(PercentageFull)
+	set PercentageLeft to 10 - PercentageFull
+	set OutputBar to "[" & my UsedColor
+	repeat PercentageFull times
+		set OutputBar to OutputBar & "❙"
+	end repeat
+	set OutputBar to OutputBar & my SeparatorColor & "|" & my FreeColor
+	repeat PercentageLeft times
+		set OutputBar to OutputBar & "❙"
+	end repeat
+	set OutputBar to OutputBar & my CWhite & "]"
+end MakeBars
+
+on roundThis(n, numDecimals)
+	set x to 10 ^ numDecimals
+	(((n * x) + 0.5) div 1) / x
+end roundThis
