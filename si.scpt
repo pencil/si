@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.1"
+property CurrentVersion : "0.3.2"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -160,13 +160,12 @@ on textualcmd(cmd)
 		set ViewDisplay to true
 		set ViewGFXBus to false
 		set ViewResolutions to true
-		set ViewNetwork to true
 		set ViewAudio to true
 		set ViewPower to true
 		set ViewOSXVersion to true
 		set ViewOSXArch to true
 		set ViewOSXBuild to true
-		set ViewKernel to false
+		set ViewKernel to true
 		set ViewKernelTag to false
 		set ViewUptime to true
 		set ViewClient to true
@@ -189,7 +188,6 @@ on textualcmd(cmd)
 			set ViewGFXBus to (cmd contains "bus")
 			set ViewResolutions to (cmd contains "res")
 		end if
-		set ViewNetwork to (cmd contains "net")
 		set ViewAudio to (cmd contains "audio" or cmd contains "sound")
 		set ViewPower to (cmd contains "power")
 		set ViewOSXVersion to (cmd contains "osx")
@@ -323,6 +321,64 @@ on textualcmd(cmd)
 			return ResultMessage
 		end if
 	end if
+	
+	--Network
+	if cmd contains "network" then
+		set adapter to cmd's last word
+		set InitialTraffic to do shell script "netstat -b -I " & adapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
+		set AppleScript's text item delimiters to space
+		set InitialUploadedBytes to (text item 1 of InitialTraffic) / 1048576
+		set InitialDownloadedBytes to (text item 2 of InitialTraffic) / 1048576
+		set AppleScript's text item delimiters to ""
+		delay 1
+		set FinalTraffic to do shell script "netstat -b -I " & adapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
+		set AppleScript's text item delimiters to space
+		set FinalUploadedBytes to (text item 1 of FinalTraffic) / 1048576
+		set FinalDownloadedBytes to (text item 2 of FinalTraffic) / 1048576
+		set AppleScript's text item delimiters to ""
+		set DownloadedTraffic to roundThis(FinalDownloadedBytes / 1024, 3)
+		set UploadedTraffic to roundThis(FinalUploadedBytes / 1024, 3)
+		if DownloadedTraffic > 1 then
+			set DownloadedTrafficUnit to "GB"
+			set DownloadedTraffic to roundThis(DownloadedTraffic, 2) & DownloadedTrafficUnit
+		else
+			set DownloadedTrafficUnit to "MB"
+			set DownloadedTraffic to (DownloadedTraffic * 1000 as integer) & DownloadedTrafficUnit
+		end if
+		if UploadedTraffic > 1 then
+			set UploadedTrafficUnit to "GB"
+			set UploadedTraffic to roundThis(UploadedTraffic, 2) & UploadedTrafficUnit
+		else
+			set UploadedTrafficUnit to "MB"
+			set UploadedTraffic to (UploadedTraffic * 1000 as integer) & UploadedTrafficUnit
+		end if
+		set DifferenceBetweenUploadedBytes to (FinalUploadedBytes - InitialUploadedBytes)
+		set DifferenceBetweenDownloadedBytes to (FinalDownloadedBytes - InitialDownloadedBytes)
+		set DownloadSpeed to roundThis(DifferenceBetweenDownloadedBytes, 3)
+		set UploadSpeed to roundThis(DifferenceBetweenUploadedBytes, 3)
+		if DownloadSpeed > 1 then
+			set DownloadSpeedUnit to "MB/s"
+			set DownloadSpeed to roundThis(DownloadSpeed, 2)
+			set DownloadSpeed to DownloadSpeed & DownloadSpeedUnit
+		else
+			set DownloadSpeedUnit to "KB/s"
+			set DownloadSpeed to DownloadSpeed * 1000 as integer
+			set DownloadSpeed to DownloadSpeed & DownloadSpeedUnit
+		end if
+		if UploadSpeed > 1 then
+			set UploadedSpeedUnit to "MB/s"
+			set UploadSpeed to roundThis(UploadSpeed, 2)
+			set UploadSpeed to UploadSpeed & UploadedSpeedUnit
+		else
+			set UploadedSpeedUnit to "KB/s"
+			set UploadSpeed to UploadSpeed * 1000 as integer
+			set UploadSpeed to UploadSpeed & UploadedSpeedUnit
+		end if
+		set msg to FBold & "Net:" & FBold & " [" & adapter & "] D:" & DownloadSpeed & " [" & DownloadedTraffic & "] - U:" & UploadSpeed & " [" & UploadedTraffic & "]" & ItemDelimiter
+		return msg
+	end if
+	
+	
 	
 	if cmd is "help" then
 		set msg to ¬
@@ -649,66 +705,6 @@ on textualcmd(cmd)
 		set msg to msg & ItemDelimiter
 	end if
 	
-	--Network
-	if ViewNetwork then
-		set findactiveip to do shell script "netstat -an | head -n3 | tail -n1 | awk {'print $4'}"
-		set AppleScript's text item delimiters to "."
-		set findactiveip to text items 1 thru -2 of findactiveip as text
-		set AppleScript's text item delimiters to ""
-		set activeadapter to the first word of (do shell script "ifconfig | grep " & findactiveip & " -B 3 | head -n1")
-		set bw1 to do shell script "netstat -b -I " & activeadapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
-		set AppleScript's text item delimiters to space
-		set upbytes1 to (text item 1 of bw1) / 1048576
-		set downbytes1 to (text item 2 of bw1) / 1048576
-		set AppleScript's text item delimiters to ""
-		delay 1
-		set bw2 to do shell script "netstat -b -I " & activeadapter & " | tail -n1 | awk {'print $(NF-1),$(NF-4)'}"
-		set AppleScript's text item delimiters to space
-		set upbytes2 to (text item 1 of bw2) / 1048576
-		set downbytes2 to (text item 2 of bw2) / 1048576
-		set AppleScript's text item delimiters to ""
-		set trafficdown to roundThis(downbytes2 / 1024, 3)
-		set trafficup to roundThis(upbytes2 / 1024, 3)
-		if trafficdown > 1 then
-			set tdunit to "GB"
-			set trafficdown to roundThis(trafficdown, 2) & tdunit
-		else
-			set tdunit to "MB"
-			set trafficdown to (trafficdown * 1000 as integer) & tdunit
-		end if
-		if trafficup > 1 then
-			set tuunit to "GB"
-			set trafficup to roundThis(trafficup, 2) & tuunit
-		else
-			set tuunit to "MB"
-			set trafficup to (trafficup * 1000 as integer) & tuunit
-		end if
-		set updiff to (upbytes2 - upbytes1)
-		set downdiff to (downbytes2 - downbytes1)
-		set downspeed to roundThis(downdiff, 3)
-		set upspeed to roundThis(updiff, 3)
-		if downspeed > 1 then
-			set dunit to "MB/s"
-			set downspeed to roundThis(downspeed, 2)
-			set downspeed to downspeed & dunit
-		else
-			set dunit to "KB/s"
-			set downspeed to downspeed * 1000 as integer
-			set downspeed to downspeed & dunit
-		end if
-		if upspeed > 1 then
-			set uunit to "MB/s"
-			set upspeed to roundThis(upspeed, 2)
-			set upspeed to upspeed & uunit
-		else
-			set uunit to "KB/s"
-			set upspeed to upspeed * 1000 as integer
-			set upspeed to upspeed & uunit
-		end if
-		set msg to msg & FBold & "Net: " & FBold & "[" & activeadapter & "] D:" & downspeed & " [" & trafficdown & "] - U:" & upspeed & " [" & trafficup & "]" & ItemDelimiter
-	end if
-	
-	
 	--Audio
 	if ViewAudio then
 		set AudioCard to do shell script "kextstat | grep HDA"
@@ -877,3 +873,7 @@ on roundThis(n, numDecimals)
 	set x to 10 ^ numDecimals
 	(((n * x) + 0.5) div 1) / x
 end roundThis
+
+on getNetworkData(adapter)
+	
+end getNetworkData
