@@ -53,7 +53,7 @@ on textualcmd(cmd)
 	set ClientVersion to version of application ClientName
 	
 	-- Defines the POSIX path to the "Textual" application
-	set TextualPath to POSIX path of (path to application "Textual")
+	set TextualPath to POSIX path of (path to current application)
 	
 	-- Defines the path to the Mac Models plist (also used by the /sysinfo plugin)
 	set MachinesPlist to TextualPath & "Contents/Resources/Extensions/SystemProfiler.bundle/Contents/Resources/MacintoshModels.plist"
@@ -872,8 +872,12 @@ end MakeBars
 on roundThis(n, numDecimals)
 	set x to 10 ^ numDecimals
 	(((n * x) + 0.5) div 1) / x
+<<<<<<< HEAD
 end roundThis
 
 on getNetworkData(adapter)
 	
 end getNetworkData
+=======
+end roundThis
+>>>>>>> Minor style and bug fixes... consider this 0.3.3 alpha :P
