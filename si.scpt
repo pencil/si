@@ -872,12 +872,6 @@ end MakeBars
 on roundThis(n, numDecimals)
 	set x to 10 ^ numDecimals
 	(((n * x) + 0.5) div 1) / x
-<<<<<<< HEAD
 end roundThis
 
-on getNetworkData(adapter)
-	
-end getNetworkData
-=======
-end roundThis
->>>>>>> Minor style and bug fixes... consider this 0.3.3 alpha :P
+
