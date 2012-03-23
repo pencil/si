@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.2"
+property CurrentVersion : "0.3.3"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -44,7 +44,7 @@ property FreeColor : CGreen
 property SeparatorColor : COrange
 
 -- | DEBUG COMMAND | --
---set cmd to ""
+-- set cmd to ""
 
 on textualcmd(cmd)
 	-- |Variables| --
@@ -164,13 +164,13 @@ on textualcmd(cmd)
 		set ViewPower to true
 		set ViewOSXVersion to true
 		set ViewOSXArch to true
-		set ViewOSXBuild to true
+		set ViewOSXBuild to false
 		set ViewKernel to true
 		set ViewKernelTag to false
 		set ViewUptime to true
 		set ViewClient to true
 		set ViewClientBuild to false
-		set ViewScriptVersion to true
+		set ViewScriptVersion to false
 	else
 		---- Checks which options the user supplied at runtime and acts accordingly.
 		set ViewMac to (cmd contains "mac")
@@ -709,9 +709,9 @@ on textualcmd(cmd)
 	if ViewAudio then
 		set AudioCard to do shell script "kextstat | grep HDA"
 		if AudioCard contains "VoodooHDA" then
-			set AudioCard to "Voodoo HD Audio"
+			set AudioCard to "VoodooHDA"
 		else if AudioCard contains "AppleHDA" then
-			set AudioCard to "Apple HD Audio"
+			set AudioCard to "AppleHDA"
 		else
 			set AudioCard to "Unknown"
 		end if
@@ -752,7 +752,7 @@ on textualcmd(cmd)
 	if ViewOSXVersion then
 		set AppleScript's text item delimiters to space
 		set OSXInfo to the paragraphs of (do shell script "sw_vers | awk -F\"\\t\" '/BuildVersion:|ProductVersion|ProductName/ {print $2}'")
-		set msg to msg & FBold & "OS: " & FBold & items 1 thru 2 of OSXInfo & " "
+		set msg to msg & FBold & "OS: " & FBold & "OS X " & item 2 of OSXInfo & " "
 		set AppleScript's text item delimiters to ""
 		if ViewOSXBuild then
 			set OSXBuild to "[" & item 3 of OSXInfo & "] "
@@ -760,9 +760,9 @@ on textualcmd(cmd)
 		end if
 		if ViewOSXArch then
 			if (do shell script "uname -m") is "x86_64" then
-				set OSXArch to "64-bit"
+				set OSXArch to "x64"
 			else
-				set OSXArch to "32-bit"
+				set OSXArch to "i386"
 			end if
 			set msg to msg & OSXArch
 		end if
@@ -796,7 +796,7 @@ on textualcmd(cmd)
 				exit repeat
 			end if
 		end repeat
-		set msg to msg & FBold & "Uptime: " & FBold & uptime & ItemDelimiter
+		set msg to msg & FBold & "Up: " & FBold & uptime & ItemDelimiter
 	end if
 	
 	--Client
@@ -824,7 +824,25 @@ on textualcmd(cmd)
 		end repeat
 	end if
 	
+	set NumberOfChars to count characters of msg
+	if NumberOfChars > 450 then
+		-- Uses "OS:" as a delimiter.
+		set AppleScript's text item delimiters to "OS:"
+		-- Divides output into two separate variables
+		set msg1 to text item 1 of msg
+		set msg2 to FBold & "OS:" & text item 2 of msg
+		-- Clear the field delimiter so next command won't be garbled.
+		set AppleScript's text item delimiters to ""
+		-- Removes last separator from 1st line of output
+		set msg1 to characters 1 thru -4 of msg1 as string
+		set msg to msg1 & return & msg2
+	end if
+	
+	-- Debug
+	--return msg & "[" & (count of characters of msg) & "]"
+	
 	return msg
+	
 end textualcmd
 
 on cutforward(orig, ponto)
