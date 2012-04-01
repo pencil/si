@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.3"
+property CurrentVersion : "0.3.5"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -44,7 +44,7 @@ property FreeColor : CGreen
 property SeparatorColor : COrange
 
 -- | DEBUG COMMAND | --
--- set cmd to ""
+--set cmd to ""
 
 on textualcmd(cmd)
 	-- |Variables| --
@@ -526,7 +526,7 @@ on textualcmd(cmd)
 		else
 			set FreeMemory to (TotalMemory - (removetext(TopUsedMemory, "M")))
 		end if
-		set UsedMemory to TotalMemory - FreeMemory
+		set UsedMemory to TotalMemory - FreeMemory as integer
 		set UsedMemoryBar to round ((UsedMemory / TotalMemory) * 100) / 10 as integer
 		if TotalMemory ≥ 1024 then
 			set TotalMemory to roundThis((TotalMemory / 1024), 2)
@@ -538,10 +538,9 @@ on textualcmd(cmd)
 			set UsedMemory to roundThis((UsedMemory / 1024), 2)
 			set UsedMemoryUnit to "GB"
 		else
-			set UsedMemory to roundThis((UsedMemory * 100), 2)
+			--		set UsedMemory to roundThis((UsedMemory * 100), 2)
 			set UsedMemoryUnit to "MB"
 		end if
-		
 		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
 		if ViewBars then
 			set OutputBar to MakeBars(UsedMemoryBar)
@@ -682,6 +681,11 @@ on textualcmd(cmd)
 				set ResolutionMonitor1 to item 4 of GPU1
 				set ResolutionMonitor2 to item 5 of GPU1
 				set ResolutionsGPU1 to ResolutionMonitor1 & " & " & ResolutionMonitor2
+			else if ScreensGPU1 is 3 then
+				set ResolutionMonitor1 to item 4 of GPU1
+				set ResolutionMonitor2 to item 5 of GPU1
+				set ResolutionMonitor3 to item 6 of GPU1
+				set ResolutionsGPU1 to ResolutionMonitor1 & " & " & ResolutionMonitor2 & " & " & ResolutionMonitor3
 			else
 				set ResolutionsGPU1 to ""
 			end if
@@ -691,12 +695,17 @@ on textualcmd(cmd)
 				set msg to msg & ResolutionsGPU1
 			end if
 			if ScreensGPU2 is 1 then
-				set ResolutionMonitor3 to item 4 of GPU2
-				set ResolutionsGPU2 to ResolutionMonitor3
+				set ResolutionMonitor4 to item 4 of GPU2
+				set ResolutionsGPU2 to ResolutionMonitor4
 			else if ScreensGPU2 is 2 then
-				set ResolutionMonitor3 to item 4 of GPU2
-				set ResolutionMonitor4 to item 5 of GPU2
-				set ResolutionsGPU2 to ResolutionMonitor3 & " & " & ResolutionMonitor4
+				set ResolutionMonitor4 to item 4 of GPU2
+				set ResolutionMonitor5 to item 5 of GPU2
+				set ResolutionsGPU2 to ResolutionMonitor4 & " & " & ResolutionMonitor5
+			else if ScreensGPU2 is 3 then
+				set ResolutionMonitor4 to item 4 of GPU2
+				set ResolutionMonitor5 to item 5 of GPU2
+				set ResolutionMonitor6 to item 6 of GPU2
+				set ResolutionsGPU2 to ResolutionMonitor4 & " & " & ResolutionMonitor5 & " & " & ResolutionMonitor6
 			else
 				set ResolutionsGPU2 to ""
 			end if
