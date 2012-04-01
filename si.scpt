@@ -307,7 +307,7 @@ on textualcmd(cmd)
 				do shell script "rm -f " & ExternalScriptsPath & "/xsys*.scpt"
 				do shell script "unzip -o " & UpdateZipPath & " -d " & ExternalScriptsPath
 				do shell script "rm -f " & UpdateZipPath
-				set ResultMessage to "/echo Successefully updated " & ScriptName & " to version " & LatestVersion & " from " & CurrentVersion & "."
+				set ResultMessage to "/echo Successfully updated " & ScriptName & " to version " & LatestVersion & " from " & CurrentVersion & "."
 				return ResultMessage
 			else if DownloadedUpdateCheck contains "cannot find" then
 				set ResultMessage to "/echo Error extracting " & ScriptName & ". Try again later or download a previous version from " & ScriptHomepage
