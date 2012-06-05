@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/textual/scripts/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.7"
+property CurrentVersion : "0.3.8"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -60,21 +60,6 @@ on textualcmd(cmd)
 	
 	-- Defines the path for the Scripts folder inside the Textual executable.
 	set InternalScriptsPath to the quoted form of (TextualPath & "Contents/Resources/Scripts/")
-	
-	-- Defines the path for the Scripts folder inside the ~/Library/ folder according to the version of Textual.
-	if ClientName is "Textual" then
-		if ClientVersion > "2.0.99" then
-			set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual IRC/Scripts")
-		else
-			set ExternalScriptsPath to the quoted form of (the POSIX path of (path to application support from the user domain) & "Textual/Scripts")
-		end if
-	end if
-	
-	-- Defines the temporary working directory path.
-	set TempDirPath to the quoted form of (the POSIX path of (path to temporary items from the user domain))
-	
-	-- Defines the path where the files for the updates will be temporarily stored
-	set UpdateZipPath to the quoted form of (the POSIX path of (path to temporary items from the user domain) & "update.zip")
 	
 	-- Defines Text Formatting
 	
@@ -265,60 +250,6 @@ on textualcmd(cmd)
 		else if Simple is "False" then
 			do shell script "defaults write xeon3d.si Simple True"
 			return "/echo The script " & FBold & "will remove" & FBold & " the formatting from the output."
-		end if
-	end if
-	
-	-- UpdaterNG 0.1
-	if cmd is "update" then
-		set ScriptDownloadFolderURL to ScriptHomepage & "download/"
-		
-		do shell script "defaults write xeon3d.si LatestURL " & ScriptDownloadFolderURL & "latest"
-		do shell script "defaults write xeon3d.si LatestMD5URL " & ScriptDownloadFolderURL & "latestmd5"
-		
-		set LatestVersionURL to do shell script "defaults read xeon3d.si LatestURL"
-		set LatestChecksum to do shell script "defaults read xeon3d.si LatestMD5URL"
-		
-		--- Defines the latest available script version
-		set LatestVersion to do shell script "curl " & LatestVersionURL
-		
-		--- Defines the latest available script version's zip file checksum
-		set LatestChecksum to do shell script "curl " & LatestChecksum
-		
-		--- Defines the zip file URL of the latest version
-		set LatestZip to ScriptDownloadFolderURL & scriptname & "-" & LatestVersion & ".zip"
-		
-		-- When the file isn't there, it'll get an error HTML page.
-		if LatestVersion contains "DOCTYPE" then
-			return "/debug echo Error getting the latest " & scriptname & " version number. Please try again later or visit " & ScriptHomepage & " for more information."
-		end if
-		if LatestVersion is greater than CurrentVersion then
-			--	return UpdateZipPath
-			do shell script "rm -f " & UpdateZipPath
-			do shell script "curl -C - " & LatestZip & " -o " & UpdateZipPath
-			if LatestChecksum is not (do shell script "md5 -q " & UpdateZipPath) then
-				if LatestChecksum contains "DOCTYPE" then
-					return "/debug echo Error getting the online checksum for the latest  " & scriptname & " version. Please try again later or download newest version here: " & ScriptHomepage
-				end if
-				return "/debug echo The " & scriptname & " download was corrupted. Local MD5: " & (do shell script "md5 -q " & UpdateZipPath) & " - Online MD5: " & LatestChecksum & " . Please try again later or visit " & ScriptHomepage & " for more info."
-			end if
-			set DownloadedUpdateCheck to do shell script "unzip -t " & UpdateZipPath
-			if DownloadedUpdateCheck contains "No errors detected" then
-				do shell script "rm -f " & ExternalScriptsPath & "/si*.scpt"
-				do shell script "rm -f " & ExternalScriptsPath & "/xsys*.scpt"
-				do shell script "unzip -o " & UpdateZipPath & " -d " & ExternalScriptsPath
-				do shell script "rm -f " & UpdateZipPath
-				set ResultMessage to "/echo Successfully updated " & scriptname & " to version " & LatestVersion & " from " & CurrentVersion & "."
-				return ResultMessage
-			else if DownloadedUpdateCheck contains "cannot find" then
-				set ResultMessage to "/echo Error extracting " & scriptname & ". Try again later or download a previous version from " & ScriptHomepage
-				return ResultMessage
-			end if
-		else if LatestVersion is equal to CurrentVersion then
-			set ResultMessage to "/echo " & scriptname & " is already up to date. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
-			return ResultMessage
-		else if CurrentVersion is greater than LatestVersion then
-			set ResultMessage to "/echo Your copy of " & scriptname & " is newer than the last released version. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
-			return ResultMessage
 		end if
 	end if
 	
