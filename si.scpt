@@ -11,12 +11,12 @@
 -- | SCRIPT START | --
 -- |Properties| --
 property ClientName : name of current application
-property ScriptName : "si"
+property scriptname : "si"
 property ScriptDescription : "A System Information Script for Textual"
-property ScriptHomepage : "http://xeon3d.net/si/"
+property ScriptHomepage : "http://xeon3d.net/textual/scripts/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.5"
+property CurrentVersion : "0.3.7"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -161,16 +161,16 @@ on textualcmd(cmd)
 		set ViewGFXBus to false
 		set ViewResolutions to true
 		set ViewAudio to true
-		set ViewPower to true
+		set ViewPower to false
 		set ViewOSXVersion to true
 		set ViewOSXArch to true
-		set ViewOSXBuild to false
-		set ViewKernel to true
+		set ViewOSXBuild to true
+		set ViewKernel to false
 		set ViewKernelTag to false
 		set ViewUptime to true
 		set ViewClient to true
 		set ViewClientBuild to false
-		set ViewScriptVersion to false
+		set ViewScriptVersion to true
 	else
 		---- Checks which options the user supplied at runtime and acts accordingly.
 		set ViewMac to (cmd contains "mac")
@@ -204,13 +204,13 @@ on textualcmd(cmd)
 	end if
 	
 	if cmd is "version" then
-		set msg to "Script Version: " & ScriptName & space & CurrentVersion & " for " & ClientName & " by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
+		set msg to "Script Version: " & scriptname & space & CurrentVersion & " for " & ClientName & " by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
 		return msg
 	end if
 	
 	if cmd is "options" then
 		set msg to "/echo Possible Options:" & NewLine & ¬
-			"/echo To change an option type '/" & ScriptName & " <option name> toggle'. Example: /" & ScriptName & " simple toggle " & NewLine & ¬
+			"/echo To change an option type '/" & scriptname & " <option name> toggle'. Example: /" & scriptname & " simple toggle " & NewLine & ¬
 			"/echo • HideLastDelimiter - Defines if the script should hide the final delimiter (as there are no more fields after." & FBold & " - Current Status: " & FBold & CRed & HideLastDelimiter & NewLine & ¬
 			"/echo • UseAllMountpoints - Defines if the script considers every mounted disk / net share as available disk space or not." & FBold & " - Current Status: " & FBold & CRed & UseAllMountpoints & NewLine & ¬
 			"/echo • Simple - Defines if the formatting is removed from the output of the script." & FBold & " - Current Status: " & FBold & CRed & Simple & NewLine
@@ -220,10 +220,10 @@ on textualcmd(cmd)
 	
 	if cmd is "HideLastDelimiter" then
 		if HideLastDelimiter is "True" then
-			set msg to "/echo The last dot (delimiter) is currently " & FBold & "NOT" & FBold & " being shown. To change this type '/" & ScriptName & " HideLastDelimiter toggle'"
+			set msg to "/echo The last dot (delimiter) is currently " & FBold & "NOT" & FBold & " being shown. To change this type '/" & scriptname & " HideLastDelimiter toggle'"
 			return msg
 		else if HideLastDelimiter is "False" then
-			set msg to "/echo The last dot (delimiter) is currently " & FBold & "BEING" & FBold & " shown. To change this type '/" & ScriptName & " HideLastDelimiter toggle'"
+			set msg to "/echo The last dot (delimiter) is currently " & FBold & "BEING" & FBold & " shown. To change this type '/" & scriptname & " HideLastDelimiter toggle'"
 			return msg
 		end if
 	end if
@@ -240,10 +240,10 @@ on textualcmd(cmd)
 	
 	if cmd is "UseAllMountpoints" then
 		if UseAllMountpoints is "True" then
-			set msg to "/echo The script will use " & FBold & "All mounted disks" & FBold & ". To change this type '/" & ScriptName & " UseAllMountpoints toggle'"
+			set msg to "/echo The script will use " & FBold & "All mounted disks" & FBold & ". To change this type '/" & scriptname & " UseAllMountpoints toggle'"
 			return msg
 		else if UseAllMountpoints is "False" then
-			set msg to "/echo The script will use " & FBold & "the Startup disk only" & FBold & ". To change this type '/" & ScriptName & " UseAllMountpoints toggle'"
+			set msg to "/echo The script will use " & FBold & "the Startup disk only" & FBold & ". To change this type '/" & scriptname & " UseAllMountpoints toggle'"
 			return msg
 		end if
 	end if
@@ -285,11 +285,11 @@ on textualcmd(cmd)
 		set LatestChecksum to do shell script "curl " & LatestChecksum
 		
 		--- Defines the zip file URL of the latest version
-		set LatestZip to ScriptDownloadFolderURL & ScriptName & "-" & LatestVersion & ".zip"
+		set LatestZip to ScriptDownloadFolderURL & scriptname & "-" & LatestVersion & ".zip"
 		
 		-- When the file isn't there, it'll get an error HTML page.
 		if LatestVersion contains "DOCTYPE" then
-			return "/debug echo Error getting the latest " & ScriptName & " version number. Please try again later or visit " & ScriptHomepage & " for more information."
+			return "/debug echo Error getting the latest " & scriptname & " version number. Please try again later or visit " & ScriptHomepage & " for more information."
 		end if
 		if LatestVersion is greater than CurrentVersion then
 			--	return UpdateZipPath
@@ -297,9 +297,9 @@ on textualcmd(cmd)
 			do shell script "curl -C - " & LatestZip & " -o " & UpdateZipPath
 			if LatestChecksum is not (do shell script "md5 -q " & UpdateZipPath) then
 				if LatestChecksum contains "DOCTYPE" then
-					return "/debug echo Error getting the online checksum for the latest  " & ScriptName & " version. Please try again later or download newest version here: " & ScriptHomepage
+					return "/debug echo Error getting the online checksum for the latest  " & scriptname & " version. Please try again later or download newest version here: " & ScriptHomepage
 				end if
-				return "/debug echo The " & ScriptName & " download was corrupted. Local MD5: " & (do shell script "md5 -q " & UpdateZipPath) & " - Online MD5: " & LatestChecksum & " . Please try again later or visit " & ScriptHomepage & " for more info."
+				return "/debug echo The " & scriptname & " download was corrupted. Local MD5: " & (do shell script "md5 -q " & UpdateZipPath) & " - Online MD5: " & LatestChecksum & " . Please try again later or visit " & ScriptHomepage & " for more info."
 			end if
 			set DownloadedUpdateCheck to do shell script "unzip -t " & UpdateZipPath
 			if DownloadedUpdateCheck contains "No errors detected" then
@@ -307,17 +307,17 @@ on textualcmd(cmd)
 				do shell script "rm -f " & ExternalScriptsPath & "/xsys*.scpt"
 				do shell script "unzip -o " & UpdateZipPath & " -d " & ExternalScriptsPath
 				do shell script "rm -f " & UpdateZipPath
-				set ResultMessage to "/echo Successfully updated " & ScriptName & " to version " & LatestVersion & " from " & CurrentVersion & "."
+				set ResultMessage to "/echo Successfully updated " & scriptname & " to version " & LatestVersion & " from " & CurrentVersion & "."
 				return ResultMessage
 			else if DownloadedUpdateCheck contains "cannot find" then
-				set ResultMessage to "/echo Error extracting " & ScriptName & ". Try again later or download a previous version from " & ScriptHomepage
+				set ResultMessage to "/echo Error extracting " & scriptname & ". Try again later or download a previous version from " & ScriptHomepage
 				return ResultMessage
 			end if
 		else if LatestVersion is equal to CurrentVersion then
-			set ResultMessage to "/echo " & ScriptName & " is already up to date. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
+			set ResultMessage to "/echo " & scriptname & " is already up to date. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
 			return ResultMessage
 		else if CurrentVersion is greater than LatestVersion then
-			set ResultMessage to "/echo Your copy of " & ScriptName & " is newer than the last released version. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
+			set ResultMessage to "/echo Your copy of " & scriptname & " is newer than the last released version. (Your script version: " & CurrentVersion & "; Latest released script version: " & LatestVersion & ")"
 			return ResultMessage
 		end if
 	end if
@@ -382,8 +382,8 @@ on textualcmd(cmd)
 	
 	if cmd is "help" then
 		set msg to ¬
-			"/echo " & FBold & "Usage:" & FBold & " /" & ScriptName & " [labels] [simple]" & NewLine & ¬
-			"/echo If run without arguments, it'll show a predefined set of system details that can be customized by typing '/" & ScriptName & " options'" & NewLine & ¬
+			"/echo " & FBold & "Usage:" & FBold & " /" & scriptname & " [labels] [simple]" & NewLine & ¬
+			"/echo If run without arguments, it'll show a predefined set of system details that can be customized by typing '/" & scriptname & " options'" & NewLine & ¬
 			"/echo Possible labels:" & NewLine & "/echo mac, cpu, speed, cap, cache, fsb, temp, ram, bar, mem, hd, gpu, res, audio, power, osx, osxbuild, osxarch, kernel, kerneltag, uptime, client." & NewLine & ¬
 			"/echo There are also some special labels: 'about' shows some info about the script; " & NewLine & ¬
 			"/echo The 'simple' label makes the script output without any formatting (colors, bold, etc...); " & NewLine & ¬
@@ -393,7 +393,7 @@ on textualcmd(cmd)
 	
 	if cmd is "about" then
 		set msg to ¬
-			"/echo " & FBold & ScriptName & " " & CurrentVersion & FBold & " - " & ScriptDescription & NewLine & ¬
+			"/echo " & FBold & scriptname & " " & CurrentVersion & FBold & " - " & ScriptDescription & NewLine & ¬
 			"/echo Homepage: " & ScriptHomepage & NewLine & ¬
 			"/echo Coded by " & ScriptAuthor & " - " & ScriptAuthorHomepage & NewLine
 		return msg
@@ -516,17 +516,8 @@ on textualcmd(cmd)
 	--Ram
 	if ViewRam then
 		set TotalMemory to (round (do shell script "sysctl -n hw.memsize") / 1048576)
-		set MemStats to do shell script "top -l1 | grep PhysMem | awk '{print $8,$10}'"
-		set AppleScript's text item delimiters to space
-		set TopUsedMemory to MemStats's text item 1
-		set TopFreeMemory to MemStats's text item 2
-		set AppleScript's text item delimiters to ""
-		if TopFreeMemory contains "M" then
-			set FreeMemory to removetext(TopFreeMemory, "M")
-		else
-			set FreeMemory to (TotalMemory - (removetext(TopUsedMemory, "M")))
-		end if
-		set UsedMemory to TotalMemory - FreeMemory as integer
+		set free to roundThis((the (last word of (do shell script "vm_stat | grep free")) * 4096) / (1048576), 2) as integer
+		set UsedMemory to (TotalMemory - free)
 		set UsedMemoryBar to round ((UsedMemory / TotalMemory) * 100) / 10 as integer
 		if TotalMemory ≥ 1024 then
 			set TotalMemory to roundThis((TotalMemory / 1024), 2)
@@ -538,7 +529,6 @@ on textualcmd(cmd)
 			set UsedMemory to roundThis((UsedMemory / 1024), 2)
 			set UsedMemoryUnit to "GB"
 		else
-			--		set UsedMemory to roundThis((UsedMemory * 100), 2)
 			set UsedMemoryUnit to "MB"
 		end if
 		set msg to msg & FBold & "RAM: " & FBold & UsedMemory & UsedMemoryUnit & "/" & TotalMemory & TotalMemoryUnit
@@ -820,7 +810,7 @@ on textualcmd(cmd)
 	
 	--Script Version
 	if ViewScriptVersion then
-		set msg to msg & FBold & "Script: " & FBold & ScriptName & " " & CurrentVersion & ItemDelimiter
+		set msg to msg & FBold & "Script: " & FBold & scriptname & " " & CurrentVersion & ItemDelimiter
 	end if
 	
 	--Remove last separator
