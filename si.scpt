@@ -1,4 +1,4 @@
-﻿-- si - A System Information Script for Textual
+-- si - A System Information Script for Textual
 -- Coded by Xeon3D
 --  Very loosely based on KSysInfo for Linkinus by KanadaKid
 
@@ -16,7 +16,8 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://xeon3d.net/textual/scripts/si/"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.8"
+property CurrentVersion : "0.3.9"
+property CodeName : "AntiMikeyInducedBugs Soup"
 property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
 
 ---  Colors
@@ -189,7 +190,7 @@ on textualcmd(cmd)
 	end if
 	
 	if cmd is "version" then
-		set msg to "Script Version: " & scriptname & space & CurrentVersion & " for " & ClientName & " by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
+		set msg to "Script Version: " & scriptname & space & CurrentVersion & "(Codename: " & CodeName & ") for " & ClientName & " by " & ScriptAuthor & ". Get it @ " & ScriptHomepage
 		return msg
 	end if
 	
@@ -341,16 +342,11 @@ on textualcmd(cmd)
 			set machineName to "Virtualized"
 		else
 			try
-				set machineName to do shell script "cat " & MachinesPlist & " | grep -A1 " & MachineModel
+				set machineName to do shell script "defaults read " & MachinesPlist & " | grep " & MachineModel & " | awk -F\\\" {'print $4'}"
 			on error
 				set machineName to ""
 			end try
 			if machineName is not "" then
-				set machineName to 2nd paragraph of machineName
-				set AppleScript's text item delimiters to ">"
-				set machineName to text item 2 of machineName
-				set AppleScript's text item delimiters to "<"
-				set machineName to text item 1 of machineName
 				if machineName contains "-inch" then
 					set AppleScript's text item delimiters to "-inch"
 					set machineName to text item 1 of machineName & "\"" & text item 2 of machineName
@@ -821,5 +817,3 @@ on roundThis(n, numDecimals)
 	set x to 10 ^ numDecimals
 	(((n * x) + 0.5) div 1) / x
 end roundThis
-
-
