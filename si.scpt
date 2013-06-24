@@ -16,7 +16,7 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://emupt.com"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.emupt.com"
-property CurrentVersion : "0.4.0"
+property CurrentVersion : "0.4.11"
 property CodeName : "Mavericks Power"
 property SupportChannel : "irc://irc.freenode.org/#textual"
 
@@ -97,19 +97,6 @@ on textualcmd(cmd)
 		end try
 	end try
 	
-	
-	-- Defines if it uses all active mountpoints for disk space calculation or not.
-	try
-		set UseAllMountpoints to do shell script "defaults read xeon3d.si UseAllMountpoints"
-	on error
-		try
-			do shell script ("defaults write xeon3d.si UseAllMountpoints False")
-			set UseAllMountpoints to "False"
-		on error
-			set msg to "/echo There was an error setting the UseAllMountpoints variable"
-			return msg
-		end try
-	end try
 	
 	-- This regards if the script's output is formatted or not.
 	try
@@ -224,26 +211,6 @@ on textualcmd(cmd)
 		end if
 	end if
 	
-	if cmd is "UseAllMountpoints" then
-		if UseAllMountpoints is "True" then
-			set msg to "/echo The script will use " & FBold & "All mounted disks" & FBold & ". To change this type '/" & scriptname & " UseAllMountpoints toggle'"
-			return msg
-		else if UseAllMountpoints is "False" then
-			set msg to "/echo The script will use " & FBold & "the Startup disk only" & FBold & ". To change this type '/" & scriptname & " UseAllMountpoints toggle'"
-			return msg
-		end if
-	end if
-	
-	if cmd is "UseAllMountpoints toggle" then
-		if UseAllMountpoints is "True" then
-			do shell script "defaults write xeon3d.si UseAllMountpoints False"
-			return "/echo The script will now only use the Startup disk for HDD Space calculation!"
-		else if UseAllMountpoints is "False" then
-			do shell script "defaults write xeon3d.si UseAllMountpoints True"
-			return "/echo The script will now use all mountpoints (including network shares) for HDD Space calculation!"
-		end if
-	end if
-	
 	if cmd is "Simple toggle" then
 		if Simple is "True" then
 			do shell script "defaults write xeon3d.si Simple False"
@@ -333,7 +300,6 @@ on textualcmd(cmd)
 	
 	-- Initializes the msg (output) variable.
 	set msg to ""
-	
 	--Mac Model
 	if ViewMac then
 		set MachineModel to do shell script "sysctl -n hw.model"
@@ -468,7 +434,6 @@ on textualcmd(cmd)
 	
 	--HDD
 	if ViewDisk then
-		if UseAllMountpoints is "True" then
 			set DiskFree to 0
 			set DiskUsed to 0
 			set DiskCapacity to 0
@@ -476,9 +441,6 @@ on textualcmd(cmd)
 			set AllUsed to 0
 			set AllCapacity to 0
 			set AllStats to the paragraphs of (do shell script "df -Hhk -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | awk {'print $2,$3,$4'}")
-		else
-			set AllStats to {do shell script "df -Hhm -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | grep -v Volume | awk {'print $2,$3,$4'}"}
-		end if
 		repeat with eachline in AllStats
 			set DiskCapacity to (first word of eachline) / 1024 as integer
 			set DiskUsed to (second word of eachline) / 1024 as integer
