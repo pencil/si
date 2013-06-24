@@ -1,9 +1,9 @@
 -- si - A System Information Script for Textual
 -- Coded by Xeon3D
---  Very loosely based on KSysInfo for Linkinus by KanadaKid
+-- Very loosely based on KSysInfo for Linkinus by KanadaKid
 
 -- 2 step Installation:
--- Copy this to ~/Library/Application Support/Textual IRC/Scripts/
+-- Copy this to ~/Library/Containers/com.codeux.irc.textual/Data/Library/Application Support/Textual IRC/Scripts
 -- Run /si or /si help for more options.
 
 
@@ -13,12 +13,12 @@
 property ClientName : name of current application
 property scriptname : "si"
 property ScriptDescription : "A System Information Script for Textual"
-property ScriptHomepage : "http://xeon3d.net/textual/scripts/si/"
+property ScriptHomepage : "http://emupt.com"
 property ScriptAuthor : "Xeon3D"
-property ScriptAuthorHomepage : "http://www.xeon3d.net"
-property CurrentVersion : "0.3.9"
-property CodeName : "AntiMikeyInducedBugs Soup"
-property SupportChannel : "irc://irc.wyldryde.org/#textual-extras"
+property ScriptAuthorHomepage : "http://www.emupt.com"
+property CurrentVersion : "0.4.0"
+property CodeName : "Mavericks Power"
+property SupportChannel : "irc://irc.freenode.org/#textual"
 
 ---  Colors
 property CBlack : (ASCII character 3) & "01"
@@ -468,43 +468,47 @@ on textualcmd(cmd)
 	
 	--HDD
 	if ViewDisk then
-		tell application "Finder"
-			set StartupDiskName to the name of (startup disk)
-			if UseAllMountpoints is "True" then
-				set DiskList to list disks
-			else
-				set DiskList to {StartupDiskName}
-			end if
-			set TotalFreeSpace to 0
-			set TotalDiskSpace to 0
-			repeat with CurrentDisk in DiskList
-				set CurrentDiskName to (CurrentDisk as string)
-				try
-					set DiskFreeSpace to round (the (free space of disk CurrentDiskName) / 1024 / 1024)
-					set DiskCapacity to round (the (capacity of disk CurrentDiskName) / 1024 / 1024)
-					set TotalFreeSpace to TotalFreeSpace + DiskFreeSpace
-					set TotalDiskSpace to TotalDiskSpace + DiskCapacity
-				end try
-			end repeat
-		end tell
-		set DiskUsedPercentage to round (((TotalDiskSpace - TotalFreeSpace) / TotalDiskSpace) * 100)
-		set TotalUsedSpace to roundThis(((TotalDiskSpace - TotalFreeSpace) / 1024), 2)
-		set TotalDiskSpace to roundThis((TotalDiskSpace / 1024), 2)
-		if TotalUsedSpace is greater than 1024 then
-			set TotalUsedSpace to roundThis((TotalUsedSpace / 1024), 2)
+		if UseAllMountpoints is "True" then
+			set DiskFree to 0
+			set DiskUsed to 0
+			set DiskCapacity to 0
+			set AllFree to 0
+			set AllUsed to 0
+			set AllCapacity to 0
+			set AllStats to the paragraphs of (do shell script "df -Hhk -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | awk {'print $2,$3,$4'}")
+		else
+			set AllStats to {do shell script "df -Hhm -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | grep -v Volume | awk {'print $2,$3,$4'}"}
+		end if
+		repeat with eachline in AllStats
+			set DiskCapacity to (first word of eachline) / 1024 as integer
+			set DiskUsed to (second word of eachline) / 1024 as integer
+			set DiskFree to (third word of eachline) / 1024 as integer
+			set AllCapacity to AllCapacity + DiskCapacity
+			set AllUsed to AllUsed + DiskUsed
+			set AllFree to AllFree + DiskFree
+		end repeat
+		set AResult to "Resultado:" & (AllUsed + AllFree) & " - " & AllCapacity
+		
+		
+		set AllDisksUsedPercentage to round (((AllCapacity - AllFree) / AllCapacity) * 100)
+		set AllUsed to roundThis(((AllUsed) / 1024), 2)
+		set AllCapacity to roundThis((AllCapacity / 1024), 2)
+		set AllFree to roundThis((AllFree / 1024), 2)
+		if AllUsed is greater than 1024 then
+			set AllUsed to roundThis((AllUsed / 1024), 2)
 			set UsedSpaceUnit to "TB"
 		else
 			set UsedSpaceUnit to "GB"
 		end if
-		if TotalDiskSpace is greater than 1024 then
-			set TotalDiskSpace to roundThis((TotalDiskSpace / 1024), 2)
+		if AllCapacity is greater than 1024 then
+			set AllCapacity to roundThis((AllCapacity / 1024), 2)
 			set TotalSpaceUnit to "TB"
 		else
 			set TotalSpaceUnit to "GB"
 		end if
-		set msg to msg & FBold & "HDD: " & FBold & TotalUsedSpace & UsedSpaceUnit & "/" & TotalDiskSpace & TotalSpaceUnit
+		set msg to msg & FBold & "HDD: " & FBold & AllUsed & UsedSpaceUnit & "/" & AllCapacity & TotalSpaceUnit
 		if ViewBars then
-			set UsedHDDBar to round (DiskUsedPercentage / 10) rounding to nearest
+			set UsedHDDBar to round (AllDisksUsedPercentage / 10) rounding to nearest
 			set OutputBar to MakeBars(UsedHDDBar)
 			set msg to msg & " " & OutputBar
 		end if
