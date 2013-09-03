@@ -16,8 +16,8 @@ property ScriptDescription : "A System Information Script for Textual"
 property ScriptHomepage : "http://emupt.com"
 property ScriptAuthor : "Xeon3D"
 property ScriptAuthorHomepage : "http://www.emupt.com"
-property CurrentVersion : "0.4.11"
-property CodeName : "Mavericks Power"
+property CurrentVersion : "0.4.14"
+property CodeName : "pencil is nitpicky edition"
 property SupportChannel : "irc://irc.freenode.org/#textual"
 
 ---  Colors
@@ -328,6 +328,7 @@ on textualcmd(cmd)
 	
 	
 	if ViewCPU then
+		set NRofCPUs to do shell script "sysctl hw.packages | awk '{print $2}'"
 		set CPUModel to do shell script "sysctl machdep.cpu.brand_string | awk '{ print $2,$3,$4,$5,$6,$7,$8,$9 }'"
 		set CPUModel to my removetext(CPUModel, "(R)")
 		set CPUModel to my removetext(CPUModel, "(TM)")
@@ -336,7 +337,11 @@ on textualcmd(cmd)
 		set CPUModel to my removetext(CPUModel, "GHz")
 		set CPUModel to my removetext(CPUModel, "  ")
 		set CPUModel to my cutforward(CPUModel, " @")
-		set msg to msg & FBold & "CPU: " & FBold & CPUModel
+		if NRofCPUs is "1" then
+			set msg to msg & FBold & "CPU: " & FBold & CPUModel
+		else
+			set msg to msg & FBold & "CPU: 2x " & FBold & CPUModel
+		end if
 		
 		
 		if ViewCurrentCPUSpeed then
@@ -434,13 +439,13 @@ on textualcmd(cmd)
 	
 	--HDD
 	if ViewDisk then
-			set DiskFree to 0
-			set DiskUsed to 0
-			set DiskCapacity to 0
-			set AllFree to 0
-			set AllUsed to 0
-			set AllCapacity to 0
-			set AllStats to the paragraphs of (do shell script "df -Hhk -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | awk {'print $2,$3,$4'}")
+		set DiskFree to 0
+		set DiskUsed to 0
+		set DiskCapacity to 0
+		set AllFree to 0
+		set AllUsed to 0
+		set AllCapacity to 0
+		set AllStats to the paragraphs of (do shell script "df -Hhk -T nodevfs | grep -v Mounted | grep -v \\/net | grep -v \\/home | awk {'print $2,$3,$4'}")
 		repeat with eachline in AllStats
 			set DiskCapacity to (first word of eachline) / 1024 as integer
 			set DiskUsed to (second word of eachline) / 1024 as integer
