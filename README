@@ -6,10 +6,10 @@ Ideas and some code from KSysInfo by KanadaKid
 2 Step Installation:
 
 1) Open up Finder.
-2) Copy si.scpt to your ~/Library/Application Support/Textual IRC/Scripts/ Folder.
+2) Copy si.scpt to your ~/Library/Application Scripts/com.codeux.irc.textual/ Folder.
 
 Important Notes:
 
-The script is tested only against Textual 2.1 and Lion 10.7.2 / Snow Leopard 10.6.8.
+The script is tested only against Textual 3.2.3 on Mountain Lion 10.8.x and Mavericks 10.9.x.
 Fixes and Improvements are welcome, but be patient on me as I'm a git newbie.
 Also, suggestions for new functionality are pretty damn good too.
